@@ -9,6 +9,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { Trophy, Tv2, ArrowLeft, X } from "lucide-react";
 import { SyncCountdownRing } from "@/components/sync-countdown-ring";
+import { playPropSound } from "@/lib/prop-sounds";
 import confetti from "canvas-confetti";
 
 const COLORS = ["#f97316", "#eab308", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#f43f5e"];
@@ -33,16 +34,24 @@ interface ResolvedNotif {
 const BANNER_SHOW_MS = 4200;
 const BANNER_DRAIN_MS = 4000;
 
-function PropResolvedBanner({ notif, onDone }: { notif: ResolvedNotif; onDone: () => void }) {
+interface BannerProps {
+  notif: ResolvedNotif;
+  onDone: () => void;
+  soundEnabled: boolean;
+  soundChoice: string;
+}
+
+function PropResolvedBanner({ notif, onDone, soundEnabled, soundChoice }: BannerProps) {
   const [leaving, setLeaving] = useState(false);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
   useEffect(() => {
+    if (soundEnabled) playPropSound(soundChoice);
     const leaveTimer = setTimeout(() => setLeaving(true), BANNER_DRAIN_MS);
     const doneTimer  = setTimeout(() => onDoneRef.current(), BANNER_SHOW_MS);
     return () => { clearTimeout(leaveTimer); clearTimeout(doneTimer); };
-  }, [notif.id]);
+  }, [notif.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isPositive = notif.result === true;
   const label = notif.type === "yes_no"
@@ -501,6 +510,8 @@ export default function TvMode() {
           key={notifQueue[0].id}
           notif={notifQueue[0]}
           onDone={dismissNotif}
+          soundEnabled={game?.soundEnabled ?? true}
+          soundChoice={game?.soundChoice ?? "chime"}
         />
       )}
 

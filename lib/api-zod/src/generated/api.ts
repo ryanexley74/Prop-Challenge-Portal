@@ -29,6 +29,16 @@ export const ListGamesResponseItem = zod.object({
     .nullish()
     .describe("Auto-sync interval in minutes (null or 5 = default)"),
   lastSheetSync: zod.coerce.date().nullish(),
+  soundEnabled: zod
+    .boolean()
+    .nullish()
+    .describe("Whether sound plays on TV when a prop resolves"),
+  soundChoice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
+    ),
   createdAt: zod.coerce.date(),
 });
 export const ListGamesResponse = zod.array(ListGamesResponseItem);
@@ -60,6 +70,16 @@ export const FindGameByCodeResponse = zod.object({
     .nullish()
     .describe("Auto-sync interval in minutes (null or 5 = default)"),
   lastSheetSync: zod.coerce.date().nullish(),
+  soundEnabled: zod
+    .boolean()
+    .nullish()
+    .describe("Whether sound plays on TV when a prop resolves"),
+  soundChoice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
+    ),
   createdAt: zod.coerce.date(),
 });
 
@@ -106,6 +126,16 @@ export const GetGameResponse = zod.object({
     .nullish()
     .describe("Auto-sync interval in minutes"),
   lastSheetSync: zod.coerce.date().nullish(),
+  soundEnabled: zod
+    .boolean()
+    .nullish()
+    .describe("Whether sound plays on TV when a prop resolves"),
+  soundChoice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
+    ),
   createdAt: zod.coerce.date(),
   props: zod.array(
     zod.object({
@@ -139,6 +169,16 @@ export const UpdateGameBody = zod.object({
     .number()
     .nullish()
     .describe("Auto-sync interval in minutes"),
+  soundEnabled: zod
+    .boolean()
+    .nullish()
+    .describe("Whether sound plays on TV when a prop resolves"),
+  soundChoice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
+    ),
 });
 
 export const UpdateGameResponse = zod.object({
@@ -153,6 +193,16 @@ export const UpdateGameResponse = zod.object({
     .nullish()
     .describe("Auto-sync interval in minutes (null or 5 = default)"),
   lastSheetSync: zod.coerce.date().nullish(),
+  soundEnabled: zod
+    .boolean()
+    .nullish()
+    .describe("Whether sound plays on TV when a prop resolves"),
+  soundChoice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
+    ),
   createdAt: zod.coerce.date(),
 });
 

@@ -480,6 +480,14 @@ components:
           type: string
           format: date-time
           nullable: true
+        soundEnabled:
+          type: boolean
+          nullable: true
+          description: Whether sound plays on TV when a prop resolves
+        soundChoice:
+          type: string
+          nullable: true
+          description: Sound effect to play (chime, whistle, airhorn, register, broadcast)
         createdAt:
           type: string
           format: date-time
@@ -516,6 +524,14 @@ components:
           type: string
           format: date-time
           nullable: true
+        soundEnabled:
+          type: boolean
+          nullable: true
+          description: Whether sound plays on TV when a prop resolves
+        soundChoice:
+          type: string
+          nullable: true
+          description: Sound effect to play (chime, whistle, airhorn, register, broadcast)
         createdAt:
           type: string
           format: date-time
@@ -600,6 +616,14 @@ components:
           type: integer
           nullable: true
           description: Auto-sync interval in minutes
+        soundEnabled:
+          type: boolean
+          nullable: true
+          description: Whether sound plays on TV when a prop resolves
+        soundChoice:
+          type: string
+          nullable: true
+          description: Sound effect to play (chime, whistle, airhorn, register, broadcast)
 
     Prop:
       type: object

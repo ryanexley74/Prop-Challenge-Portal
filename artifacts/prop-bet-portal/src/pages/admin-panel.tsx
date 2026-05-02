@@ -14,8 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle, Volume2, VolumeX } from "lucide-react";
 import { SyncCountdownRing } from "@/components/sync-countdown-ring";
+import { SOUND_OPTIONS, playPropSound, type SoundChoice } from "@/lib/prop-sounds";
 import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
@@ -144,6 +145,32 @@ export default function AdminPanel() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
           toast.success(`Auto-sync interval set to ${value} min`);
+        },
+      }
+    );
+  };
+
+  const handleSoundToggle = () => {
+    const next = !(game.soundEnabled ?? true);
+    updateGame.mutate(
+      { gameId: id, data: { soundEnabled: next } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
+          toast.success(next ? "TV sound enabled" : "TV sound muted");
+        },
+      }
+    );
+  };
+
+  const handleSoundChange = (value: SoundChoice) => {
+    updateGame.mutate(
+      { gameId: id, data: { soundChoice: value } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
+          playPropSound(value);
+          toast.success(`Sound changed — preview playing`);
         },
       }
     );
@@ -392,6 +419,75 @@ export default function AdminPanel() {
                   </div>
                 )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* TV Sound Settings */}
+        <Card className="mb-8 border-2 border-blue-500/30">
+          <CardHeader className="bg-blue-500/5 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {(game.soundEnabled ?? true) ? (
+                  <Volume2 className="w-5 h-5 text-blue-600" />
+                ) : (
+                  <VolumeX className="w-5 h-5 text-muted-foreground" />
+                )}
+                <CardTitle className="text-lg font-black uppercase">TV Sound</CardTitle>
+              </div>
+              <button
+                onClick={handleSoundToggle}
+                disabled={updateGame.isPending}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all border ${
+                  (game.soundEnabled ?? true)
+                    ? "bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200"
+                    : "bg-muted text-muted-foreground border-muted-foreground/30 hover:bg-muted/80"
+                }`}
+              >
+                {(game.soundEnabled ?? true) ? (
+                  <><Volume2 className="w-3.5 h-3.5" /> Sound On</>
+                ) : (
+                  <><VolumeX className="w-3.5 h-3.5" /> Muted</>
+                )}
+              </button>
+            </div>
+            <CardDescription>
+              Choose a sound that plays on the TV screen each time a prop resolves.
+              Selecting a sound previews it immediately.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {SOUND_OPTIONS.map((opt) => {
+                const isSelected = (game.soundChoice ?? "chime") === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleSoundChange(opt.value)}
+                    disabled={updateGame.isPending || !(game.soundEnabled ?? true)}
+                    className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 text-left transition-all ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50 shadow-sm"
+                        : "border-border bg-background hover:border-blue-300 hover:bg-blue-50/50"
+                    } disabled:opacity-40 disabled:cursor-not-allowed`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-black text-sm">{opt.label}</span>
+                      {isSelected && (
+                        <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{opt.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {!(game.soundEnabled ?? true) && (
+              <p className="text-xs text-muted-foreground mt-3 text-center">
+                Sound is muted — enable it above to hear sounds on the TV screen.
+              </p>
             )}
           </CardContent>
         </Card>

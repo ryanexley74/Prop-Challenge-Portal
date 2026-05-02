@@ -27,6 +27,10 @@ export interface Game {
   /** Auto-sync interval in minutes (null or 5 = default) */
   syncInterval?: number | null;
   lastSheetSync?: string | null;
+  /** Whether sound plays on TV when a prop resolves */
+  soundEnabled?: boolean | null;
+  /** Sound effect to play (chime, whistle, airhorn, register, broadcast) */
+  soundChoice?: string | null;
   createdAt: string;
 }
 
@@ -68,6 +72,10 @@ export interface GameDetail {
   /** Auto-sync interval in minutes */
   syncInterval?: number | null;
   lastSheetSync?: string | null;
+  /** Whether sound plays on TV when a prop resolves */
+  soundEnabled?: boolean | null;
+  /** Sound effect to play (chime, whistle, airhorn, register, broadcast) */
+  soundChoice?: string | null;
   createdAt: string;
   props: Prop[];
   playerCount: number;
@@ -111,6 +119,10 @@ export interface UpdateGameBody {
   sheetUrl?: string | null;
   /** Auto-sync interval in minutes */
   syncInterval?: number | null;
+  /** Whether sound plays on TV when a prop resolves */
+  soundEnabled?: boolean | null;
+  /** Sound effect to play (chime, whistle, airhorn, register, broadcast) */
+  soundChoice?: string | null;
 }
 
 export type CreatePropBodyType =
