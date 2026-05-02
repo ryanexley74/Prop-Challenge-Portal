@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "wouter";
 import {
   useGetGame,
@@ -19,6 +19,124 @@ const PODIUM_ORDER = [1, 0, 2]; // left=2nd, center=1st, right=3rd
 function propResultLabel(type: string, result: boolean) {
   if (type === "yes_no") return result ? "YES ✅" : "NO ❌";
   return result ? "OVER ✅" : "UNDER ❌";
+}
+
+// ─── Prop resolved notification banner ────────────────────────────────────
+
+interface ResolvedNotif {
+  id: number;
+  question: string;
+  type: string;
+  result: boolean;
+}
+
+const BANNER_SHOW_MS = 4200;
+const BANNER_DRAIN_MS = 4000;
+
+function PropResolvedBanner({ notif, onDone }: { notif: ResolvedNotif; onDone: () => void }) {
+  const [leaving, setLeaving] = useState(false);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  useEffect(() => {
+    const leaveTimer = setTimeout(() => setLeaving(true), BANNER_DRAIN_MS);
+    const doneTimer  = setTimeout(() => onDoneRef.current(), BANNER_SHOW_MS);
+    return () => { clearTimeout(leaveTimer); clearTimeout(doneTimer); };
+  }, [notif.id]);
+
+  const isPositive = notif.result === true;
+  const label = notif.type === "yes_no"
+    ? (isPositive ? "YES" : "NO")
+    : (isPositive ? "OVER" : "UNDER");
+  const emoji = isPositive ? "✅" : "❌";
+  const color = isPositive ? "#22c55e" : "#ef4444";
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0, left: 0, right: 0,
+        zIndex: 45,
+        display: "flex",
+        justifyContent: "center",
+        pointerEvents: "none",
+        animation: leaving
+          ? "slideOutUp 0.35s ease-in forwards"
+          : "slideInDown 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards",
+      }}
+    >
+      <div
+        style={{
+          background: "linear-gradient(160deg, rgba(10,18,36,0.98) 0%, rgba(7,15,28,0.98) 100%)",
+          border: `2px solid ${color}55`,
+          borderTop: "none",
+          borderRadius: "0 0 20px 20px",
+          padding: "18px 56px 16px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
+          boxShadow: `0 12px 48px ${color}25, 0 0 0 1px ${color}18, inset 0 1px 0 rgba(255,255,255,0.06)`,
+          backdropFilter: "blur(12px)",
+          minWidth: 520,
+          maxWidth: "68vw",
+        }}
+      >
+        {/* Header label */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: "0.6rem", fontWeight: 900, letterSpacing: "0.45em", textTransform: "uppercase", color: "#f97316" }}>
+            🔔 Prop Resolved
+          </span>
+        </div>
+
+        {/* Question */}
+        <div
+          style={{
+            color: "#f8fafc",
+            fontSize: "clamp(1rem, 2.2vw, 1.45rem)",
+            fontWeight: 900,
+            textAlign: "center",
+            lineHeight: 1.25,
+            textTransform: "uppercase",
+            letterSpacing: "0.03em",
+          }}
+        >
+          {notif.question}
+        </div>
+
+        {/* Result pill */}
+        <div
+          style={{
+            marginTop: 2,
+            padding: "7px 32px",
+            borderRadius: 10,
+            background: `${color}20`,
+            border: `2px solid ${color}70`,
+            color,
+            fontSize: "1.6rem",
+            fontWeight: 900,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            textShadow: `0 0 24px ${color}90`,
+          }}
+        >
+          {label} {emoji}
+        </div>
+
+        {/* Drain progress bar */}
+        <div style={{ width: "100%", height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden", marginTop: 2 }}>
+          <div
+            style={{
+              height: "100%",
+              background: `linear-gradient(to right, ${color}aa, ${color})`,
+              borderRadius: 2,
+              animation: `drainBar ${BANNER_DRAIN_MS}ms linear forwards`,
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Scrolling ticker ──────────────────────────────────────────────────────
@@ -281,7 +399,10 @@ export default function TvMode() {
   const { gameId } = useParams();
   const id = Number(gameId);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
+  const [notifQueue, setNotifQueue] = useState<ResolvedNotif[]>([]);
   const prevStatusRef = useRef<string | null>(null);
+  const seenResolvedIdsRef = useRef<Set<number>>(new Set());
+  const initialLoadDoneRef = useRef(false);
 
   const { data: game } = useGetGame(id, {
     query: { enabled: !!id, queryKey: getGetGameQueryKey(id), refetchInterval: 3000 },
@@ -299,6 +420,36 @@ export default function TvMode() {
     }
     prevStatusRef.current = game.status;
   }, [game?.status]);
+
+  // Detect newly resolved props and queue notifications
+  useEffect(() => {
+    if (!game?.props) return;
+    const resolved = game.props.filter(
+      (p) => p.result !== null && p.result !== undefined
+    );
+    if (!initialLoadDoneRef.current) {
+      // Seed seen set on first load — don't fire banners for already-resolved props
+      resolved.forEach((p) => seenResolvedIdsRef.current.add(p.id));
+      initialLoadDoneRef.current = true;
+      return;
+    }
+    const fresh = resolved.filter((p) => !seenResolvedIdsRef.current.has(p.id));
+    if (fresh.length === 0) return;
+    fresh.forEach((p) => seenResolvedIdsRef.current.add(p.id));
+    setNotifQueue((prev) => [
+      ...prev,
+      ...fresh.map((p) => ({
+        id: p.id,
+        question: p.question,
+        type: p.type,
+        result: p.result as boolean,
+      })),
+    ]);
+  }, [game?.props]);
+
+  const dismissNotif = useCallback(() => {
+    setNotifQueue((prev) => prev.slice(1));
+  }, []);
 
   // Fullscreen on mount
   useEffect(() => {
@@ -341,6 +492,15 @@ export default function TvMode() {
         <CelebrationOverlay
           entries={entries}
           onDismiss={() => setCelebrationDismissed(true)}
+        />
+      )}
+
+      {/* Prop resolved notification banner */}
+      {notifQueue[0] && (
+        <PropResolvedBanner
+          key={notifQueue[0].id}
+          notif={notifQueue[0]}
+          onDone={dismissNotif}
         />
       )}
 
