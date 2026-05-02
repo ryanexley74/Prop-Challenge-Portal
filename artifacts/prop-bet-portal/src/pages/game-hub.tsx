@@ -3,7 +3,7 @@ import { useGetGame, useGetLeaderboard, getGetGameQueryKey, getGetLeaderboardQue
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Trophy, Activity, Users, ListChecks, Link2, Check } from "lucide-react";
+import { Trophy, Activity, Users, ListChecks, Link2, Check, Tv2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -83,6 +83,13 @@ export default function GameHub() {
               {copied ? "Copied!" : "Invite Link"}
             </button>
             {game && <InviteQrDialog gameId={id} gameName={game.name} variant="glass" />}
+            <Link
+              href={`/games/${id}/tv`}
+              className="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-bold uppercase tracking-wider bg-white/15 hover:bg-white/25 text-white transition-colors"
+            >
+              <Tv2 className="w-4 h-4" />
+              TV Mode
+            </Link>
           </div>
         </div>
       </header>

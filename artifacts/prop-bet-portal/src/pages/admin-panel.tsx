@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check } from "lucide-react";
+import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2 } from "lucide-react";
 import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
@@ -145,6 +145,9 @@ export default function AdminPanel() {
               {copiedInvite ? "Copied!" : "Invite Link"}
             </button>
             {game && <InviteQrDialog gameId={id} gameName={game.name} variant="glass" />}
+            <Link href={`/games/${id}/tv`} className="inline-flex items-center gap-2 text-sm font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors">
+              <Tv2 className="w-4 h-4" /> TV Mode
+            </Link>
             <Link href={`/games/${id}`} className="inline-flex items-center gap-2 text-sm font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors">
               View Live Hub <ArrowRight className="w-4 h-4" />
             </Link>

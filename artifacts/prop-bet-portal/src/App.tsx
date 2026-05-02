@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import GameHub from "@/pages/game-hub";
 import JoinGame from "@/pages/join-game";
 import AdminPanel from "@/pages/admin-panel";
+import TvMode from "@/pages/tv-mode";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/games/:gameId" component={GameHub} />
       <Route path="/games/:gameId/join" component={JoinGame} />
       <Route path="/games/:gameId/admin" component={AdminPanel} />
+      <Route path="/games/:gameId/tv" component={TvMode} />
       <Route component={NotFound} />
     </Switch>
   );
