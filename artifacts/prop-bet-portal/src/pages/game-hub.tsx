@@ -3,11 +3,12 @@ import { useGetGame, useGetLeaderboard, getGetGameQueryKey, getGetLeaderboardQue
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Trophy, Activity, Users, ListChecks, Link2, Check, Tv2, ClipboardList } from "lucide-react";
+import { Trophy, Activity, Users, ListChecks, Link2, Check, Tv2, ClipboardList, Bell, BellOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
+import { useNotificationPermission, usePropNotifications } from "@/hooks/use-prop-notifications";
 
 export default function GameHub() {
   const { gameId } = useParams();
@@ -15,6 +16,7 @@ export default function GameHub() {
   const [copied, setCopied] = useState(false);
   const [myPlayerId, setMyPlayerId] = useState<number | null>(null);
   const { toast } = useToast();
+  const { permission: notifPermission, request: requestNotifPermission } = useNotificationPermission();
 
   useEffect(() => {
     const stored = localStorage.getItem(`prop_game_${id}_player`);
@@ -28,6 +30,8 @@ export default function GameHub() {
   const { data: leaderboard, isLoading: lbLoading } = useGetLeaderboard(id, {
     query: { enabled: !!id, queryKey: getGetLeaderboardQueryKey(id), refetchInterval: 3000 }
   });
+
+  usePropNotifications(game?.props ?? [], game?.name ?? "", notifPermission === "granted");
 
   const handleCopyInvite = () => {
     const link = `${window.location.origin}/games/${id}/join`;
@@ -89,6 +93,32 @@ export default function GameHub() {
               {copied ? "Copied!" : "Invite Link"}
             </button>
             {game && <InviteQrDialog gameId={id} gameName={game.name} variant="glass" />}
+            {notifPermission !== "unsupported" && (
+              <button
+                onClick={notifPermission === "default" ? requestNotifPermission : undefined}
+                title={
+                  notifPermission === "granted"
+                    ? "Notifications on — you'll be alerted when props resolve"
+                    : notifPermission === "denied"
+                    ? "Notifications blocked — allow them in your browser settings"
+                    : "Get notified when props are resolved"
+                }
+                className={`inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-bold uppercase tracking-wider transition-colors ${
+                  notifPermission === "granted"
+                    ? "bg-green-500/20 text-green-300 border border-green-500/40 cursor-default"
+                    : notifPermission === "denied"
+                    ? "bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed"
+                    : "bg-white/15 hover:bg-white/25 text-white"
+                }`}
+              >
+                {notifPermission === "denied" ? (
+                  <BellOff className="w-4 h-4" />
+                ) : (
+                  <Bell className={`w-4 h-4 ${notifPermission === "granted" ? "fill-green-300" : ""}`} />
+                )}
+                {notifPermission === "granted" ? "Notifying" : notifPermission === "denied" ? "Blocked" : "Notify Me"}
+              </button>
+            )}
             {myPlayerId && (
               <Link
                 href={`/games/${id}/results`}

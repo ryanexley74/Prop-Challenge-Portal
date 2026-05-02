@@ -8,8 +8,9 @@ import {
   getGetLeaderboardQueryKey,
   getGetPlayerAnswersQueryKey,
 } from "@workspace/api-client-react";
-import { Trophy, CheckCircle2, XCircle, Clock, ArrowLeft, Medal } from "lucide-react";
+import { Trophy, CheckCircle2, XCircle, Clock, ArrowLeft, Medal, Bell, BellOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNotificationPermission, usePropNotifications } from "@/hooks/use-prop-notifications";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -45,6 +46,9 @@ export default function PlayerResults() {
   const { data: leaderboard, isLoading: lbLoading } = useGetLeaderboard(id, {
     query: { enabled: !!id, queryKey: getGetLeaderboardQueryKey(id), refetchInterval: 5000 },
   });
+
+  const { permission: notifPermission, request: requestNotifPermission } = useNotificationPermission();
+  usePropNotifications(game?.props ?? [], game?.name ?? "", notifPermission === "granted");
 
   const isLoading = gameLoading || answersLoading || lbLoading;
 
@@ -128,12 +132,41 @@ export default function PlayerResults() {
         style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)" }}
       >
         <div className="container mx-auto px-4 max-w-2xl">
-          <Link
-            href={`/games/${id}`}
-            className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" /> Game Hub
-          </Link>
+          <div className="flex items-center justify-between mb-4">
+            <Link
+              href={`/games/${id}`}
+              className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider"
+            >
+              <ArrowLeft className="w-4 h-4" /> Game Hub
+            </Link>
+
+            {notifPermission !== "unsupported" && (
+              <button
+                onClick={notifPermission === "default" ? requestNotifPermission : undefined}
+                title={
+                  notifPermission === "granted"
+                    ? "Notifications on"
+                    : notifPermission === "denied"
+                    ? "Notifications blocked — allow in browser settings"
+                    : "Get notified when props resolve"
+                }
+                className={`inline-flex items-center gap-2 h-9 px-3 rounded-lg text-xs font-black uppercase tracking-wider transition-colors ${
+                  notifPermission === "granted"
+                    ? "bg-green-500/20 text-green-300 border border-green-500/40 cursor-default"
+                    : notifPermission === "denied"
+                    ? "bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed"
+                    : "bg-white/15 hover:bg-white/25 text-white"
+                }`}
+              >
+                {notifPermission === "denied" ? (
+                  <BellOff className="w-3.5 h-3.5" />
+                ) : (
+                  <Bell className={`w-3.5 h-3.5 ${notifPermission === "granted" ? "fill-green-300" : ""}`} />
+                )}
+                {notifPermission === "granted" ? "Notifying" : notifPermission === "denied" ? "Blocked" : "Notify Me"}
+              </button>
+            )}
+          </div>
 
           <div className="flex items-start justify-between gap-4">
             <div>

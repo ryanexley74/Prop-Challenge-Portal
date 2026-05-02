@@ -57,7 +57,7 @@ export default function JoinGame() {
 
   const handleJoin = async () => {
     if (!name.trim()) return;
-    joinGame.mutate({ data: { name } }, {
+    joinGame.mutate({ gameId: id, data: { name } }, {
       onSuccess: (player) => {
         setPlayerId(player.id);
         localStorage.setItem(`prop_game_${id}_player`, player.id.toString());
@@ -84,7 +84,7 @@ export default function JoinGame() {
       answer
     }));
 
-    submitAnswers.mutate({ data: { playerId, answers: answersList } }, {
+    submitAnswers.mutate({ gameId: id, data: { playerId, answers: answersList } }, {
       onSuccess: () => {
         toast.success("Picks locked in!");
         setLocation(`/games/${id}`);
