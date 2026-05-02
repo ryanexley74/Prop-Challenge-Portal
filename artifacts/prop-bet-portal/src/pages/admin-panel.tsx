@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { 
   useGetGame, useListProps, useCreateProp, useUpdateProp, useDeleteProp, useUpdateGame,
+  useSyncFromSheet,
   getGetGameQueryKey, getListPropsQueryKey 
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText } from "lucide-react";
+import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
@@ -49,11 +50,18 @@ export default function AdminPanel() {
   const updateProp = useUpdateProp();
   const deleteProp = useDeleteProp();
   const updateGame = useUpdateGame();
+  const syncFromSheet = useSyncFromSheet();
 
   const [propOpen, setPropOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [type, setType] = useState<PropType>("yes_no");
   const [threshold, setThreshold] = useState("");
+  const [sheetUrlInput, setSheetUrlInput] = useState("");
+  const [syncResult, setSyncResult] = useState<{
+    resolved: { propId: number; question: string; result: boolean }[];
+    unmatched: string[];
+    alreadyResolved: number;
+  } | null>(null);
 
   if (gameLoading || propsLoading) {
     return <div className="p-8"><Skeleton className="h-96 w-full rounded-xl" /></div>;
@@ -111,6 +119,28 @@ export default function AdminPanel() {
         }
       );
     }
+  };
+
+  const handleSheetSync = () => {
+    if (!sheetUrlInput.trim()) return;
+    syncFromSheet.mutate(
+      { gameId: id, data: { sheetUrl: sheetUrlInput.trim() } },
+      {
+        onSuccess: (result) => {
+          setSyncResult(result);
+          queryClient.invalidateQueries({ queryKey: getListPropsQueryKey(id) });
+          if (result.resolved.length > 0) {
+            toast.success(`Synced! Resolved ${result.resolved.length} prop${result.resolved.length !== 1 ? "s" : ""}.`);
+          } else {
+            toast.info("Sync complete — no new props resolved yet.");
+          }
+        },
+        onError: (err: unknown) => {
+          const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Sync failed. Check the sheet URL and sharing settings.";
+          toast.error(msg);
+        },
+      }
+    );
   };
 
   const handleStatusChange = (status: "open" | "active" | "completed") => {
@@ -214,6 +244,82 @@ export default function AdminPanel() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Google Sheet Sync */}
+        <Card className="mb-8 border-2 border-green-500/30">
+          <CardHeader className="bg-green-500/5 pb-4">
+            <div className="flex items-center gap-2">
+              <Sheet className="w-5 h-5 text-green-600" />
+              <CardTitle className="text-lg font-black uppercase">Google Sheet Sync</CardTitle>
+            </div>
+            <CardDescription>
+              Paste a public Google Sheet URL. The sheet should list your prop questions and their answers.
+              Click "Sync Now" at any time during the game to auto-resolve matching props.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="https://docs.google.com/spreadsheets/d/..."
+                value={sheetUrlInput}
+                onChange={(e) => setSheetUrlInput(e.target.value)}
+                className="font-mono text-sm"
+              />
+              <Button
+                onClick={handleSheetSync}
+                disabled={syncFromSheet.isPending || !sheetUrlInput.trim()}
+                className="font-bold uppercase shrink-0 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {syncFromSheet.isPending ? (
+                  <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Syncing...</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4 mr-2" /> Sync Now</>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Make sure the sheet is set to <strong>"Anyone with the link can view"</strong> in Google Sheets sharing settings.
+            </p>
+
+            {syncResult && (
+              <div className="mt-2 space-y-3 border rounded-lg p-4 bg-muted/30">
+                <div className="flex items-center gap-4 text-sm font-bold">
+                  <span className="text-green-600">{syncResult.resolved.length} resolved</span>
+                  {syncResult.unmatched.length > 0 && (
+                    <span className="text-amber-600">{syncResult.unmatched.length} unmatched</span>
+                  )}
+                  {syncResult.alreadyResolved > 0 && (
+                    <span className="text-muted-foreground">{syncResult.alreadyResolved} already done</span>
+                  )}
+                </div>
+                {syncResult.resolved.length > 0 && (
+                  <div className="space-y-1">
+                    {syncResult.resolved.map((r) => (
+                      <div key={r.propId} className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                        <span className="font-medium truncate">{r.question}</span>
+                        <span className={`ml-auto font-black text-xs px-2 py-0.5 rounded ${r.result ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {r.result ? "YES / OVER" : "NO / UNDER"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {syncResult.unmatched.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-amber-600 uppercase">Could not match:</p>
+                    {syncResult.unmatched.map((q, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <XCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="truncate">{q}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-black uppercase flex items-center gap-2">

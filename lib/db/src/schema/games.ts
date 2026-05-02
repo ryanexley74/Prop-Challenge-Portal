@@ -10,6 +10,7 @@ export const gamesTable = pgTable("games", {
   description: text("description"),
   status: gameStatusEnum("status").notNull().default("open"),
   adminCode: text("admin_code").notNull(),
+  sheetUrl: text("sheet_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

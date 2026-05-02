@@ -23,6 +23,7 @@ export interface Game {
   description?: string | null;
   status: GameStatus;
   adminCode: string;
+  sheetUrl?: string | null;
   createdAt: string;
 }
 
@@ -60,6 +61,7 @@ export interface GameDetail {
   description?: string | null;
   status: GameDetailStatus;
   adminCode: string;
+  sheetUrl?: string | null;
   createdAt: string;
   props: Prop[];
   playerCount: number;
@@ -68,6 +70,23 @@ export interface GameDetail {
 export interface CreateGameBody {
   name: string;
   description?: string | null;
+}
+
+export interface SyncFromSheetBody {
+  sheetUrl: string;
+}
+
+export type SheetSyncResultResolvedItem = {
+  propId: number;
+  question: string;
+  result: boolean;
+};
+
+export interface SheetSyncResult {
+  resolved: SheetSyncResultResolvedItem[];
+  unmatched: string[];
+  alreadyResolved: number;
+  sheetUrl: string;
 }
 
 export type UpdateGameBodyStatus =
@@ -83,6 +102,7 @@ export interface UpdateGameBody {
   status?: UpdateGameBodyStatus;
   name?: string;
   description?: string | null;
+  sheetUrl?: string | null;
 }
 
 export type CreatePropBodyType =

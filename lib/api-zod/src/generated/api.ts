@@ -23,6 +23,7 @@ export const ListGamesResponseItem = zod.object({
   description: zod.string().nullish(),
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
+  sheetUrl: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListGamesResponse = zod.array(ListGamesResponseItem);
@@ -33,6 +34,47 @@ export const ListGamesResponse = zod.array(ListGamesResponseItem);
 export const CreateGameBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
+});
+
+/**
+ * @summary Find a game by admin code
+ */
+export const FindGameByCodeParams = zod.object({
+  code: zod.coerce.string(),
+});
+
+export const FindGameByCodeResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  status: zod.enum(["open", "active", "completed"]),
+  adminCode: zod.string(),
+  sheetUrl: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Sync prop results from a linked Google Sheet
+ */
+export const SyncFromSheetParams = zod.object({
+  gameId: zod.coerce.number(),
+});
+
+export const SyncFromSheetBody = zod.object({
+  sheetUrl: zod.string(),
+});
+
+export const SyncFromSheetResponse = zod.object({
+  resolved: zod.array(
+    zod.object({
+      propId: zod.number(),
+      question: zod.string(),
+      result: zod.boolean(),
+    }),
+  ),
+  unmatched: zod.array(zod.string()),
+  alreadyResolved: zod.number(),
+  sheetUrl: zod.string(),
 });
 
 /**
@@ -48,6 +90,7 @@ export const GetGameResponse = zod.object({
   description: zod.string().nullish(),
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
+  sheetUrl: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   props: zod.array(
     zod.object({
@@ -76,6 +119,7 @@ export const UpdateGameBody = zod.object({
   status: zod.enum(["open", "active", "completed"]).optional(),
   name: zod.string().optional(),
   description: zod.string().nullish(),
+  sheetUrl: zod.string().nullish(),
 });
 
 export const UpdateGameResponse = zod.object({
@@ -84,6 +128,7 @@ export const UpdateGameResponse = zod.object({
   description: zod.string().nullish(),
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
+  sheetUrl: zod.string().nullish(),
   createdAt: zod.coerce.date(),
 });
 

@@ -67,6 +67,56 @@ paths:
               schema:
                 $ref: "#/components/schemas/Game"
 
+  /games/by-code/{code}:
+    get:
+      operationId: findGameByCode
+      tags: [games]
+      summary: Find a game by admin code
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Found game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "404":
+          description: Not found
+
+  /games/{gameId}/sync-from-sheet:
+    post:
+      operationId: syncFromSheet
+      tags: [games]
+      summary: Sync prop results from a linked Google Sheet
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncFromSheetBody"
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SheetSyncResult"
+        "400":
+          description: Bad request
+        "404":
+          description: Game not found
+
   /games/{gameId}:
     get:
       operationId: getGame
@@ -419,6 +469,9 @@ components:
           enum: [open, active, completed]
         adminCode:
           type: string
+        sheetUrl:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -444,6 +497,9 @@ components:
           enum: [open, active, completed]
         adminCode:
           type: string
+        sheetUrl:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -473,6 +529,43 @@ components:
       required:
         - name
 
+    SyncFromSheetBody:
+      type: object
+      properties:
+        sheetUrl:
+          type: string
+      required:
+        - sheetUrl
+
+    SheetSyncResult:
+      type: object
+      properties:
+        resolved:
+          type: array
+          items:
+            type: object
+            properties:
+              propId:
+                type: integer
+              question:
+                type: string
+              result:
+                type: boolean
+            required: [propId, question, result]
+        unmatched:
+          type: array
+          items:
+            type: string
+        alreadyResolved:
+          type: integer
+        sheetUrl:
+          type: string
+      required:
+        - resolved
+        - unmatched
+        - alreadyResolved
+        - sheetUrl
+
     UpdateGameBody:
       type: object
       properties:
@@ -482,6 +575,9 @@ components:
         name:
           type: string
         description:
+          type: string
+          nullable: true
+        sheetUrl:
           type: string
           nullable: true
 

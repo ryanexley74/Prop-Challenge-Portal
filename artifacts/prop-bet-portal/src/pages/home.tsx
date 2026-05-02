@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useListGames, useCreateGame, getListGamesQueryKey } from "@workspace/api-client-react";
+import { useListGames, useCreateGame, getListGamesQueryKey, findGameByCode } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Plus, Activity, Link2, Check } from "lucide-react";
+import { Trophy, Plus, Activity, Link2, Check, LogIn, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
 
@@ -32,6 +32,72 @@ function CopyInviteButton({ gameId }: { gameId: number }) {
       {copied ? <Check className="w-4 h-4 text-green-600" /> : <Link2 className="w-4 h-4" />}
       {copied ? "Copied!" : "Copy Invite Link"}
     </Button>
+  );
+}
+
+function EnterCodeSection() {
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const isAdminCode = (val: string) => /^[A-Fa-f0-9]{8}$/.test(val.trim());
+  const isNumericId = (val: string) => /^\d+$/.test(val.trim());
+
+  const handleGo = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) return;
+    setError("");
+
+    if (isNumericId(trimmed)) {
+      setLocation(`/games/${trimmed}/join`);
+      return;
+    }
+
+    if (isAdminCode(trimmed)) {
+      setLoading(true);
+      try {
+        const game = await findGameByCode(trimmed);
+        setLocation(`/games/${game.id}/admin`);
+      } catch {
+        setError("No game found for that admin code. Double-check and try again.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    setError("Enter an 8-character admin code or a numeric game ID.");
+  };
+
+  return (
+    <Card className="mb-8 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-orange-50/50">
+      <CardContent className="pt-6 pb-6">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center gap-2 mb-3">
+            <LogIn className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-black uppercase tracking-wide">Enter a Code</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Have an admin code? Enter it to jump back to your game. Players can enter their numeric game ID to join.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              placeholder="e.g. A3F2C1D4 or 5"
+              value={code}
+              onChange={(e) => { setCode(e.target.value); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleGo()}
+              className="font-mono font-bold uppercase tracking-widest text-center text-lg"
+            />
+            <Button onClick={handleGo} disabled={loading || !code.trim()} className="font-bold px-6 shrink-0">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "GO"}
+            </Button>
+          </div>
+          {error && <p className="text-sm text-destructive font-medium mt-2">{error}</p>}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -94,6 +160,8 @@ export default function Home() {
       </header>
 
       <main className="container mx-auto px-4">
+        <EnterCodeSection />
+
         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary" /> Active Games
         </h2>

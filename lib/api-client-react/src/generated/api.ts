@@ -31,7 +31,9 @@ import type {
   Leaderboard,
   Player,
   Prop,
+  SheetSyncResult,
   SubmitAnswersBody,
+  SyncFromSheetBody,
   UpdateGameBody,
   UpdatePropBody,
 } from "./api.schemas";
@@ -269,6 +271,180 @@ export const useCreateGame = <
   TContext
 > => {
   return useMutation(getCreateGameMutationOptions(options));
+};
+
+/**
+ * @summary Find a game by admin code
+ */
+export const getFindGameByCodeUrl = (code: string) => {
+  return `/api/games/by-code/${code}`;
+};
+
+export const findGameByCode = async (
+  code: string,
+  options?: RequestInit,
+): Promise<Game> => {
+  return customFetch<Game>(getFindGameByCodeUrl(code), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getFindGameByCodeQueryKey = (code: string) => {
+  return [`/api/games/by-code/${code}`] as const;
+};
+
+export const getFindGameByCodeQueryOptions = <
+  TData = Awaited<ReturnType<typeof findGameByCode>>,
+  TError = ErrorType<void>,
+>(
+  code: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof findGameByCode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFindGameByCodeQueryKey(code);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof findGameByCode>>> = ({
+    signal,
+  }) => findGameByCode(code, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!code,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof findGameByCode>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type FindGameByCodeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof findGameByCode>>
+>;
+export type FindGameByCodeQueryError = ErrorType<void>;
+
+/**
+ * @summary Find a game by admin code
+ */
+
+export function useFindGameByCode<
+  TData = Awaited<ReturnType<typeof findGameByCode>>,
+  TError = ErrorType<void>,
+>(
+  code: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof findGameByCode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getFindGameByCodeQueryOptions(code, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Sync prop results from a linked Google Sheet
+ */
+export const getSyncFromSheetUrl = (gameId: number) => {
+  return `/api/games/${gameId}/sync-from-sheet`;
+};
+
+export const syncFromSheet = async (
+  gameId: number,
+  syncFromSheetBody: SyncFromSheetBody,
+  options?: RequestInit,
+): Promise<SheetSyncResult> => {
+  return customFetch<SheetSyncResult>(getSyncFromSheetUrl(gameId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(syncFromSheetBody),
+  });
+};
+
+export const getSyncFromSheetMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncFromSheet>>,
+    TError,
+    { gameId: number; data: BodyType<SyncFromSheetBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof syncFromSheet>>,
+  TError,
+  { gameId: number; data: BodyType<SyncFromSheetBody> },
+  TContext
+> => {
+  const mutationKey = ["syncFromSheet"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof syncFromSheet>>,
+    { gameId: number; data: BodyType<SyncFromSheetBody> }
+  > = (props) => {
+    const { gameId, data } = props ?? {};
+
+    return syncFromSheet(gameId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SyncFromSheetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof syncFromSheet>>
+>;
+export type SyncFromSheetMutationBody = BodyType<SyncFromSheetBody>;
+export type SyncFromSheetMutationError = ErrorType<void>;
+
+/**
+ * @summary Sync prop results from a linked Google Sheet
+ */
+export const useSyncFromSheet = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncFromSheet>>,
+    TError,
+    { gameId: number; data: BodyType<SyncFromSheetBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof syncFromSheet>>,
+  TError,
+  { gameId: number; data: BodyType<SyncFromSheetBody> },
+  TContext
+> => {
+  return useMutation(getSyncFromSheetMutationOptions(options));
 };
 
 /**

@@ -7,6 +7,7 @@ import playersRouter from "./players";
 import answersRouter from "./answers";
 import leaderboardRouter from "./leaderboard";
 import recapRouter from "./recap";
+import sheetSyncRouter from "./sheet-sync";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(playersRouter);
 router.use(answersRouter);
 router.use(leaderboardRouter);
 router.use(recapRouter);
+router.use(sheetSyncRouter);
 
 export default router;

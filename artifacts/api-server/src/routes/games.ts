@@ -10,8 +10,23 @@ import {
   GetGameSummaryParams,
 } from "@workspace/api-zod";
 import crypto from "crypto";
+import { z } from "zod";
 
 const router: IRouter = Router();
+
+// Find a game by admin code
+router.get("/games/by-code/:code", async (req, res) => {
+  try {
+    const code = z.string().min(1).parse(req.params.code);
+    const [game] = await db.select().from(gamesTable)
+      .where(eq(gamesTable.adminCode, code.toUpperCase()));
+    if (!game) return res.status(404).json({ error: "No game found for that code" });
+    res.json({ ...game, createdAt: game.createdAt.toISOString() });
+  } catch (err) {
+    req.log.error({ err }, "Failed to find game by code");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // List all games
 router.get("/games", async (req, res) => {
@@ -86,6 +101,7 @@ router.patch("/games/:gameId", async (req, res) => {
     if (body.status !== undefined) updates.status = body.status;
     if (body.name !== undefined) updates.name = body.name;
     if (body.description !== undefined) updates.description = body.description;
+    if (body.sheetUrl !== undefined) updates.sheetUrl = body.sheetUrl;
 
     const [game] = await db.update(gamesTable)
       .set(updates)
