@@ -109,7 +109,7 @@ Respond ONLY with valid JSON matching this exact format:
 If nothing can be resolved yet, return {"resolutions": [], "tallies": []}`;
 
   const completion = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: process.env.AI_MODEL ?? "gpt-4o-mini",
     messages: [{ role: "system", content: systemPrompt }],
     response_format: { type: "json_object" },
   });
