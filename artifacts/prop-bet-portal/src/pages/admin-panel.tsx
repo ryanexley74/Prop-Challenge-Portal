@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "wouter";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { 
   useGetGame, useListProps, useCreateProp, useUpdateProp, useDeleteProp, useUpdateGame,
   useSyncFromSheet,
-  getGetGameQueryKey, getListPropsQueryKey 
+  getGetGameQueryKey, getListPropsQueryKey,
+  type Prop,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -14,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle, Volume2, VolumeX } from "lucide-react";
+import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle, Volume2, VolumeX, GripVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { SyncCountdownRing } from "@/components/sync-countdown-ring";
 import { SOUND_OPTIONS, playPropSound, type SoundChoice } from "@/lib/prop-sounds";
@@ -78,6 +82,123 @@ function TallyInput({
   );
 }
 
+function SortablePropCard({
+  prop,
+  idx,
+  onResolve,
+  onDelete,
+  onSaveTally,
+  isPending,
+}: {
+  prop: Prop;
+  idx: number;
+  onResolve: (propId: number, result: boolean | null) => void;
+  onDelete: (propId: number) => void;
+  onSaveTally: (propId: number, tally: string | null) => void;
+  isPending: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: prop.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Card className={`border-l-4 ${prop.result !== null ? "border-l-muted opacity-60" : "border-l-primary"} overflow-hidden`}>
+        <div className="flex flex-col md:flex-row md:items-center">
+          {/* Drag handle */}
+          <div
+            className="hidden md:flex items-center justify-center w-8 self-stretch cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/40 transition-colors"
+            {...attributes}
+            {...listeners}
+            title="Drag to reorder"
+          >
+            <GripVertical className="w-4 h-4" />
+          </div>
+
+          <div className="p-4 flex-1">
+            <div className="flex items-start gap-2">
+              {/* Mobile drag handle */}
+              <div
+                className="md:hidden mt-1 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground shrink-0"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Prop {idx + 1}</div>
+                <div className="font-bold text-lg">{prop.question}</div>
+                {prop.threshold && (
+                  <div className="inline-block mt-2 px-2 py-1 bg-muted rounded text-sm font-bold font-mono">
+                    Line: {prop.threshold}
+                  </div>
+                )}
+                {prop.result === null && (
+                  <TallyInput
+                    propId={prop.id}
+                    currentTally={prop.tally}
+                    onSave={onSaveTally}
+                    disabled={isPending}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-muted p-4 md:w-64 flex flex-col justify-center border-t md:border-t-0 md:border-l">
+            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 text-center">
+              Resolve Result
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={prop.result === true ? "default" : "outline"}
+                size="sm"
+                className="font-black uppercase"
+                onClick={() => onResolve(prop.id, true)}
+              >
+                {prop.type === "yes_no" ? "Yes" : "Over"}
+              </Button>
+              <Button
+                variant={prop.result === false ? "secondary" : "outline"}
+                size="sm"
+                className="font-black uppercase"
+                onClick={() => onResolve(prop.id, false)}
+              >
+                {prop.type === "yes_no" ? "No" : "Under"}
+              </Button>
+            </div>
+            {prop.result !== null && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 text-xs uppercase font-bold"
+                onClick={() => onResolve(prop.id, null)}
+              >
+                Clear Result
+              </Button>
+            )}
+          </div>
+
+          <div className="bg-destructive/10 p-2 md:p-4 flex justify-center items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:bg-destructive hover:text-white"
+              onClick={() => onDelete(prop.id)}
+            >
+              <Trash2 className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminPanel() {
   const { gameId } = useParams();
   const id = Number(gameId);
@@ -123,6 +244,38 @@ export default function AdminPanel() {
   useEffect(() => {
     if (game?.sheetUrl) setSheetUrlInput(game.sheetUrl);
   }, [game?.sheetUrl]);
+
+  // Optimistic local ordering for drag-and-drop
+  const [orderedProps, setOrderedProps] = useState<Prop[]>([]);
+  useEffect(() => {
+    if (props) setOrderedProps(props);
+  }, [props]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setOrderedProps((prev) => {
+      const oldIdx = prev.findIndex((p) => p.id === active.id);
+      const newIdx = prev.findIndex((p) => p.id === over.id);
+      const reordered = arrayMove(prev, oldIdx, newIdx);
+
+      reordered.forEach((prop, idx) => {
+        if (prop.order !== idx) {
+          updateProp.mutate(
+            { propId: prop.id, data: { order: idx } },
+            { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListPropsQueryKey(id) }) }
+          );
+        }
+      });
+
+      return reordered;
+    });
+  }, [updateProp, queryClient, id]);
 
   if (gameLoading || propsLoading) {
     return <div className="p-8"><Skeleton className="h-96 w-full rounded-xl" /></div>;
@@ -686,81 +839,29 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {props?.map((prop, idx) => (
-            <Card key={prop.id} className={`border-l-4 ${prop.result !== null ? 'border-l-muted opacity-60' : 'border-l-primary'} overflow-hidden`}>
-              <div className="flex flex-col md:flex-row md:items-center">
-                <div className="p-4 flex-1">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Prop {idx + 1}</div>
-                      <div className="font-bold text-lg">{prop.question}</div>
-                      {prop.threshold && (
-                        <div className="inline-block mt-2 px-2 py-1 bg-muted rounded text-sm font-bold font-mono">
-                          Line: {prop.threshold}
-                        </div>
-                      )}
-                      {prop.result === null && (
-                        <TallyInput
-                          propId={prop.id}
-                          currentTally={prop.tally}
-                          onSave={handleSaveTally}
-                          disabled={updateProp.isPending}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-muted p-4 md:w-64 flex flex-col justify-center border-t md:border-t-0 md:border-l">
-                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 text-center">
-                    Resolve Result
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button 
-                      variant={prop.result === true ? "default" : "outline"} 
-                      size="sm"
-                      className="font-black uppercase"
-                      onClick={() => handleResolveProp(prop.id, true)}
-                    >
-                      {prop.type === "yes_no" ? "Yes" : "Over"}
-                    </Button>
-                    <Button 
-                      variant={prop.result === false ? "secondary" : "outline"} 
-                      size="sm"
-                      className="font-black uppercase"
-                      onClick={() => handleResolveProp(prop.id, false)}
-                    >
-                      {prop.type === "yes_no" ? "No" : "Under"}
-                    </Button>
-                  </div>
-                  {prop.result !== null && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="mt-2 text-xs uppercase font-bold"
-                      onClick={() => handleResolveProp(prop.id, null)}
-                    >
-                      Clear Result
-                    </Button>
-                  )}
-                </div>
-                
-                <div className="bg-destructive/10 p-2 md:p-4 flex justify-center items-center">
-                  <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive hover:text-white" onClick={() => handleDeleteProp(prop.id)}>
-                    <Trash2 className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-          {props?.length === 0 && (
-            <Card className="p-12 text-center border-dashed">
-              <p className="text-lg font-bold text-muted-foreground uppercase">No props created yet</p>
-              <Button variant="outline" className="mt-4 font-bold" onClick={() => setPropOpen(true)}>Add your first prop</Button>
-            </Card>
-          )}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={orderedProps.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-4">
+              {orderedProps.map((prop, idx) => (
+                <SortablePropCard
+                  key={prop.id}
+                  prop={prop}
+                  idx={idx}
+                  onResolve={handleResolveProp}
+                  onDelete={handleDeleteProp}
+                  onSaveTally={handleSaveTally}
+                  isPending={updateProp.isPending}
+                />
+              ))}
+              {orderedProps.length === 0 && (
+                <Card className="p-12 text-center border-dashed">
+                  <p className="text-lg font-bold text-muted-foreground uppercase">No props created yet</p>
+                  <Button variant="outline" className="mt-4 font-bold" onClick={() => setPropOpen(true)}>Add your first prop</Button>
+                </Card>
+              )}
+            </div>
+          </SortableContext>
+        </DndContext>
       </main>
     </div>
   );
