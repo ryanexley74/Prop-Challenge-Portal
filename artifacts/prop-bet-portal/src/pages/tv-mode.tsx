@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LabelList } from "recharts";
 import { Trophy, Tv2, ArrowLeft, X } from "lucide-react";
+import { SyncCountdownRing } from "@/components/sync-countdown-ring";
 import confetti from "canvas-confetti";
 
 const COLORS = ["#f97316", "#eab308", "#22c55e", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#f43f5e"];
@@ -373,6 +374,23 @@ export default function TvMode() {
               Players
             </div>
           </div>
+
+          {/* Sync countdown — only shown when auto-sync is active */}
+          {game?.sheetUrl && game?.status === "active" && (
+            <div className="flex flex-col items-center gap-1">
+              <SyncCountdownRing
+                lastSheetSync={game.lastSheetSync ?? null}
+                syncInterval={game.syncInterval ?? 5}
+                size={110}
+                strokeWidth={9}
+                showLabel={true}
+                dark={true}
+              />
+              <div className="text-slate-500 text-xs font-black uppercase tracking-widest">
+                Next Sync
+              </div>
+            </div>
+          )}
           {game?.status === "completed" && !celebrationDismissed === false && (
             <button
               onClick={() => setCelebrationDismissed(false)}

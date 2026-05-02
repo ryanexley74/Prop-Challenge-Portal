@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { SyncCountdownRing } from "@/components/sync-countdown-ring";
 import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
@@ -281,9 +282,19 @@ export default function AdminPanel() {
                 <CardTitle className="text-lg font-black uppercase">Google Sheet Sync</CardTitle>
               </div>
               {game.sheetUrl && game.status === "active" && (
-                <div className="flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                  <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
-                  AUTO-SYNC EVERY {game.syncInterval ?? 5} MIN
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
+                    <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
+                    AUTO-SYNC EVERY {game.syncInterval ?? 5} MIN
+                  </div>
+                  <SyncCountdownRing
+                    lastSheetSync={game.lastSheetSync ?? null}
+                    syncInterval={game.syncInterval ?? 5}
+                    size={64}
+                    strokeWidth={6}
+                    showLabel={true}
+                    dark={false}
+                  />
                 </div>
               )}
             </div>
