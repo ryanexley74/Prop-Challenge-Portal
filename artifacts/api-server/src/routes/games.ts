@@ -156,11 +156,34 @@ router.get("/games/:gameId/summary", async (req, res) => {
     if (!game) return res.status(404).json({ error: "Game not found" });
 
     const props = await db.select().from(propsTable).where(eq(propsTable.gameId, gameId));
-    const resolvedProps = props.filter(p => p.result !== null);
+    const resolvedProps = props.filter(p => p.result !== null && p.result !== undefined);
 
-    const [{ count: playerCount }] = await db.select({ count: sql<number>`count(*)::int` })
-      .from(playersTable)
-      .where(eq(playersTable.gameId, gameId));
+    const players = await db.select().from(playersTable).where(eq(playersTable.gameId, gameId));
+
+    let topPlayer: string | null = null;
+    let topScore: number | null = null;
+
+    if (players.length > 0 && resolvedProps.length > 0) {
+      const resolvedPropIds = resolvedProps.map(p => p.id);
+      const answers = await db.select({
+        propId: answersTable.propId,
+        playerId: answersTable.playerId,
+        answer: answersTable.answer,
+      }).from(answersTable).where(inArray(answersTable.propId, resolvedPropIds));
+
+      const propResultMap = new Map(resolvedProps.map(p => [p.id, p.result as boolean]));
+
+      let bestScore = -1;
+      for (const player of players) {
+        const pAnswers = answers.filter(a => a.playerId === player.id);
+        const score = pAnswers.filter(a => propResultMap.get(a.propId) === a.answer).length;
+        if (score > bestScore) {
+          bestScore = score;
+          topPlayer = player.name;
+          topScore = score;
+        }
+      }
+    }
 
     res.json({
       gameId: game.id,
@@ -168,9 +191,9 @@ router.get("/games/:gameId/summary", async (req, res) => {
       status: game.status,
       totalProps: props.length,
       resolvedProps: resolvedProps.length,
-      totalPlayers: playerCount,
-      topPlayer: null,
-      topScore: null,
+      totalPlayers: players.length,
+      topPlayer,
+      topScore,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get game summary");

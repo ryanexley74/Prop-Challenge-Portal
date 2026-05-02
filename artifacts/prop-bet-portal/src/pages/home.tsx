@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Plus, Activity, Link2, Check, LogIn, Loader2 } from "lucide-react";
+import { Trophy, Plus, Activity, Link2, Check, LogIn, Loader2, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
 
@@ -129,6 +129,12 @@ export default function Home() {
             <Trophy className="w-8 h-8" />
             <h1 className="text-2xl font-black uppercase tracking-wider">Prop Bet Portal</h1>
           </div>
+          <div className="flex items-center gap-2">
+            <Link href="/archive">
+              <Button variant="ghost" className="font-bold text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10">
+                <Archive className="w-4 h-4 mr-2" /> Archive
+              </Button>
+            </Link>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button variant="secondary" className="font-bold">
@@ -156,6 +162,7 @@ export default function Home() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </header>
 
@@ -170,18 +177,18 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
           </div>
-        ) : games?.length === 0 ? (
+        ) : games?.filter(g => g.status !== "completed").length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
               <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium text-muted-foreground">No games running right now.</p>
+              <p className="text-lg font-medium text-muted-foreground">No active games right now.</p>
               <p className="text-sm text-muted-foreground mb-4">Start one up for the squad.</p>
               <Button onClick={() => setOpen(true)}>Create Game</Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {games?.map((game) => (
+            {games?.filter(g => g.status !== "completed").map((game) => (
               <Card key={game.id} className="border-t-4 border-t-primary flex flex-col">
                 <CardHeader>
                   <div className="flex justify-between items-start mb-2">
@@ -209,6 +216,42 @@ export default function Home() {
                 </CardFooter>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Past Games section */}
+        {!isLoading && games && games.filter(g => g.status === "completed").length > 0 && (
+          <div className="mt-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Archive className="w-5 h-5 text-muted-foreground" /> Past Games
+              </h2>
+              <Link href="/archive">
+                <Button variant="ghost" size="sm" className="font-bold text-muted-foreground hover:text-foreground gap-1.5">
+                  View all in Archive →
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {games.filter(g => g.status === "completed").slice(0, 3).map((game) => (
+                <Card key={game.id} className="flex flex-col border-t-4 border-t-muted opacity-80 hover:opacity-100 transition-opacity">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <span className="text-xs font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded-full uppercase">
+                        ✅ Completed
+                      </span>
+                    </div>
+                    <CardTitle className="text-base">{game.name}</CardTitle>
+                    {game.description && <CardDescription className="text-xs">{game.description}</CardDescription>}
+                  </CardHeader>
+                  <CardFooter className="bg-muted/50 p-3 border-t mt-auto">
+                    <Link href={`/games/${game.id}/recap`} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground w-full gap-2">
+                      <Trophy className="w-4 h-4" /> View Recap
+                    </Link>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </main>
