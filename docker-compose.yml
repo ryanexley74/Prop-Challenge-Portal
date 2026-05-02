@@ -1,0 +1,62 @@
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       propbet
+      POSTGRES_USER:     propbet
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U propbet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Database schema migration (runs once, then exits) ──────────────────────
+  migrate:
+    build:
+      context: .
+      target: migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ── API server ──────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL:                     ${DATABASE_URL}
+      SESSION_SECRET:                   ${SESSION_SECRET}
+      AI_INTEGRATIONS_OPENAI_API_KEY:   ${OPENAI_API_KEY}
+      AI_INTEGRATIONS_OPENAI_BASE_URL:  https://api.openai.com/v1
+      NODE_ENV:                         production
+      PORT:                             8080
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # ── Nginx: serves frontend SPA + proxies /api to the api service ───────────
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  db_data:

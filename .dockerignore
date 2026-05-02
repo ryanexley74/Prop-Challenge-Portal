@@ -1,0 +1,10 @@
+node_modules
+**/node_modules
+**/dist
+**/.env
+.env.*
+!.env.example
+.git
+.local
+attached_assets
+screenshots
