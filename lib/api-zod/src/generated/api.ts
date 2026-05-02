@@ -24,6 +24,7 @@ export const ListGamesResponseItem = zod.object({
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
   sheetUrl: zod.string().nullish(),
+  lastSheetSync: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const ListGamesResponse = zod.array(ListGamesResponseItem);
@@ -50,6 +51,7 @@ export const FindGameByCodeResponse = zod.object({
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
   sheetUrl: zod.string().nullish(),
+  lastSheetSync: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
 
@@ -91,6 +93,7 @@ export const GetGameResponse = zod.object({
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
   sheetUrl: zod.string().nullish(),
+  lastSheetSync: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   props: zod.array(
     zod.object({
@@ -129,6 +132,7 @@ export const UpdateGameResponse = zod.object({
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
   sheetUrl: zod.string().nullish(),
+  lastSheetSync: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
 

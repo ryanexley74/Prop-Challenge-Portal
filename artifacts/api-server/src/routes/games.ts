@@ -35,6 +35,7 @@ router.get("/games", async (req, res) => {
     res.json(games.map(g => ({
       ...g,
       createdAt: g.createdAt.toISOString(),
+      lastSheetSync: g.lastSheetSync?.toISOString() ?? null,
     })));
   } catch (err) {
     req.log.error({ err }, "Failed to list games");
@@ -53,7 +54,7 @@ router.post("/games", async (req, res) => {
       adminCode,
       status: "open",
     }).returning();
-    res.status(201).json({ ...game, createdAt: game.createdAt.toISOString() });
+    res.status(201).json({ ...game, createdAt: game.createdAt.toISOString(), lastSheetSync: null });
   } catch (err) {
     req.log.error({ err }, "Failed to create game");
     res.status(400).json({ error: "Bad request" });
@@ -78,6 +79,7 @@ router.get("/games/:gameId", async (req, res) => {
     res.json({
       ...game,
       createdAt: game.createdAt.toISOString(),
+      lastSheetSync: game.lastSheetSync?.toISOString() ?? null,
       props: props.map(p => ({
         ...p,
         createdAt: p.createdAt.toISOString(),
@@ -109,7 +111,7 @@ router.patch("/games/:gameId", async (req, res) => {
       .returning();
 
     if (!game) return res.status(404).json({ error: "Game not found" });
-    res.json({ ...game, createdAt: game.createdAt.toISOString() });
+    res.json({ ...game, createdAt: game.createdAt.toISOString(), lastSheetSync: game.lastSheetSync?.toISOString() ?? null });
   } catch (err) {
     req.log.error({ err }, "Failed to update game");
     res.status(400).json({ error: "Bad request" });

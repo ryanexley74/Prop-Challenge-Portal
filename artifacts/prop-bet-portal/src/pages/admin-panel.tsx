@@ -56,7 +56,7 @@ export default function AdminPanel() {
   const [question, setQuestion] = useState("");
   const [type, setType] = useState<PropType>("yes_no");
   const [threshold, setThreshold] = useState("");
-  const [sheetUrlInput, setSheetUrlInput] = useState("");
+  const [sheetUrlInput, setSheetUrlInput] = useState(game?.sheetUrl ?? "");
   const [syncResult, setSyncResult] = useState<{
     resolved: { propId: number; question: string; result: boolean }[];
     unmatched: string[];
@@ -248,14 +248,27 @@ export default function AdminPanel() {
         {/* Google Sheet Sync */}
         <Card className="mb-8 border-2 border-green-500/30">
           <CardHeader className="bg-green-500/5 pb-4">
-            <div className="flex items-center gap-2">
-              <Sheet className="w-5 h-5 text-green-600" />
-              <CardTitle className="text-lg font-black uppercase">Google Sheet Sync</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sheet className="w-5 h-5 text-green-600" />
+                <CardTitle className="text-lg font-black uppercase">Google Sheet Sync</CardTitle>
+              </div>
+              {game.sheetUrl && game.status === "active" && (
+                <div className="flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
+                  <RefreshCw className="w-3 h-3" />
+                  AUTO-SYNC EVERY 5 MIN
+                </div>
+              )}
             </div>
             <CardDescription>
               Paste a public Google Sheet URL. The sheet should list your prop questions and their answers.
-              Click "Sync Now" at any time during the game to auto-resolve matching props.
+              When the game is <strong>Active</strong>, it syncs automatically every 5 minutes — or click "Sync Now" any time.
             </CardDescription>
+            {game.lastSheetSync && (
+              <p className="text-xs text-green-700 font-bold mt-1">
+                Last synced: {new Date(game.lastSheetSync).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </p>
+            )}
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <div className="flex gap-2">

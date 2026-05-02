@@ -472,6 +472,10 @@ components:
         sheetUrl:
           type: string
           nullable: true
+        lastSheetSync:
+          type: string
+          format: date-time
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -499,6 +503,10 @@ components:
           type: string
         sheetUrl:
           type: string
+          nullable: true
+        lastSheetSync:
+          type: string
+          format: date-time
           nullable: true
         createdAt:
           type: string

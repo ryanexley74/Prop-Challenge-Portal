@@ -24,6 +24,7 @@ export interface Game {
   status: GameStatus;
   adminCode: string;
   sheetUrl?: string | null;
+  lastSheetSync?: string | null;
   createdAt: string;
 }
 
@@ -62,6 +63,7 @@ export interface GameDetail {
   status: GameDetailStatus;
   adminCode: string;
   sheetUrl?: string | null;
+  lastSheetSync?: string | null;
   createdAt: string;
   props: Prop[];
   playerCount: number;

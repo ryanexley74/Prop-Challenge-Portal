@@ -11,6 +11,7 @@ export const gamesTable = pgTable("games", {
   status: gameStatusEnum("status").notNull().default("open"),
   adminCode: text("admin_code").notNull(),
   sheetUrl: text("sheet_url"),
+  lastSheetSync: timestamp("last_sheet_sync"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
