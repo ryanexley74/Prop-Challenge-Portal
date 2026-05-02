@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, pgEnum, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -11,6 +11,7 @@ export const gamesTable = pgTable("games", {
   status: gameStatusEnum("status").notNull().default("open"),
   adminCode: text("admin_code").notNull(),
   sheetUrl: text("sheet_url"),
+  syncInterval: integer("sync_interval").default(5),
   lastSheetSync: timestamp("last_sheet_sync"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

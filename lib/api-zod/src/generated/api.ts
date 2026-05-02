@@ -24,6 +24,10 @@ export const ListGamesResponseItem = zod.object({
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
   sheetUrl: zod.string().nullish(),
+  syncInterval: zod
+    .number()
+    .nullish()
+    .describe("Auto-sync interval in minutes (null or 5 = default)"),
   lastSheetSync: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
@@ -51,6 +55,10 @@ export const FindGameByCodeResponse = zod.object({
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
   sheetUrl: zod.string().nullish(),
+  syncInterval: zod
+    .number()
+    .nullish()
+    .describe("Auto-sync interval in minutes (null or 5 = default)"),
   lastSheetSync: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
@@ -93,6 +101,10 @@ export const GetGameResponse = zod.object({
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
   sheetUrl: zod.string().nullish(),
+  syncInterval: zod
+    .number()
+    .nullish()
+    .describe("Auto-sync interval in minutes"),
   lastSheetSync: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   props: zod.array(
@@ -123,6 +135,10 @@ export const UpdateGameBody = zod.object({
   name: zod.string().optional(),
   description: zod.string().nullish(),
   sheetUrl: zod.string().nullish(),
+  syncInterval: zod
+    .number()
+    .nullish()
+    .describe("Auto-sync interval in minutes"),
 });
 
 export const UpdateGameResponse = zod.object({
@@ -132,6 +148,10 @@ export const UpdateGameResponse = zod.object({
   status: zod.enum(["open", "active", "completed"]),
   adminCode: zod.string(),
   sheetUrl: zod.string().nullish(),
+  syncInterval: zod
+    .number()
+    .nullish()
+    .describe("Auto-sync interval in minutes (null or 5 = default)"),
   lastSheetSync: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });

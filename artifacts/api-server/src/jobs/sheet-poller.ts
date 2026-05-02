@@ -3,7 +3,9 @@ import { and, eq, isNotNull } from "drizzle-orm";
 import { syncGameFromSheet } from "../lib/sheet-sync-core";
 import { logger } from "../lib/logger";
 
-const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+// Master tick runs every minute; each game uses its own syncInterval setting
+const TICK_MS = 60 * 1000;
+const DEFAULT_INTERVAL_MINS = 5;
 
 async function runAutoSync() {
   try {
@@ -16,10 +18,20 @@ async function runAutoSync() {
 
     if (activeGames.length === 0) return;
 
-    logger.info({ count: activeGames.length }, "Auto-sync: checking active games with sheets");
+    const now = Date.now();
 
     for (const game of activeGames) {
       if (!game.sheetUrl) continue;
+
+      const intervalMins = game.syncInterval ?? DEFAULT_INTERVAL_MINS;
+      const intervalMs = intervalMins * 60 * 1000;
+      const lastSync = game.lastSheetSync ? new Date(game.lastSheetSync).getTime() : 0;
+      const msSinceLast = now - lastSync;
+
+      if (msSinceLast < intervalMs) continue; // not due yet
+
+      logger.info({ gameId: game.id, intervalMins, msSinceLast }, "Auto-sync: syncing game");
+
       try {
         const result = await syncGameFromSheet(game.id, game.sheetUrl);
         if (result.error) {
@@ -40,8 +52,7 @@ async function runAutoSync() {
 }
 
 export function startSheetPoller() {
-  logger.info({ intervalMs: POLL_INTERVAL_MS }, "Sheet auto-sync poller started");
-  // Run immediately on startup (after a short delay to let the server settle)
-  setTimeout(runAutoSync, 30_000);
-  setInterval(runAutoSync, POLL_INTERVAL_MS);
+  logger.info({ tickMs: TICK_MS }, "Sheet auto-sync poller started (1-min tick, per-game intervals)");
+  setTimeout(runAutoSync, 15_000); // first check 15s after start
+  setInterval(runAutoSync, TICK_MS);
 }

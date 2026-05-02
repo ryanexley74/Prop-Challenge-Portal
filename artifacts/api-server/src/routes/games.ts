@@ -104,6 +104,7 @@ router.patch("/games/:gameId", async (req, res) => {
     if (body.name !== undefined) updates.name = body.name;
     if (body.description !== undefined) updates.description = body.description;
     if (body.sheetUrl !== undefined) updates.sheetUrl = body.sheetUrl;
+    if (body.syncInterval !== undefined) updates.syncInterval = body.syncInterval;
 
     const [game] = await db.update(gamesTable)
       .set(updates)

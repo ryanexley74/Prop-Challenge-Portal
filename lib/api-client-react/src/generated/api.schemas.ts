@@ -24,6 +24,8 @@ export interface Game {
   status: GameStatus;
   adminCode: string;
   sheetUrl?: string | null;
+  /** Auto-sync interval in minutes (null or 5 = default) */
+  syncInterval?: number | null;
   lastSheetSync?: string | null;
   createdAt: string;
 }
@@ -63,6 +65,8 @@ export interface GameDetail {
   status: GameDetailStatus;
   adminCode: string;
   sheetUrl?: string | null;
+  /** Auto-sync interval in minutes */
+  syncInterval?: number | null;
   lastSheetSync?: string | null;
   createdAt: string;
   props: Prop[];
@@ -105,6 +109,8 @@ export interface UpdateGameBody {
   name?: string;
   description?: string | null;
   sheetUrl?: string | null;
+  /** Auto-sync interval in minutes */
+  syncInterval?: number | null;
 }
 
 export type CreatePropBodyType =

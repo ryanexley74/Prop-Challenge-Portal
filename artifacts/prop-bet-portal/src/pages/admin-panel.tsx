@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { 
   useGetGame, useListProps, useCreateProp, useUpdateProp, useDeleteProp, useUpdateGame,
@@ -56,12 +56,17 @@ export default function AdminPanel() {
   const [question, setQuestion] = useState("");
   const [type, setType] = useState<PropType>("yes_no");
   const [threshold, setThreshold] = useState("");
-  const [sheetUrlInput, setSheetUrlInput] = useState(game?.sheetUrl ?? "");
+  const [sheetUrlInput, setSheetUrlInput] = useState("");
   const [syncResult, setSyncResult] = useState<{
     resolved: { propId: number; question: string; result: boolean }[];
     unmatched: string[];
     alreadyResolved: number;
   } | null>(null);
+
+  // Sync URL input from loaded game data
+  useEffect(() => {
+    if (game?.sheetUrl) setSheetUrlInput(game.sheetUrl);
+  }, [game?.sheetUrl]);
 
   if (gameLoading || propsLoading) {
     return <div className="p-8"><Skeleton className="h-96 w-full rounded-xl" /></div>;
@@ -119,6 +124,28 @@ export default function AdminPanel() {
         }
       );
     }
+  };
+
+  const INTERVAL_OPTIONS = [
+    { value: "1", label: "Every 1 min" },
+    { value: "2", label: "Every 2 min" },
+    { value: "3", label: "Every 3 min" },
+    { value: "5", label: "Every 5 min" },
+    { value: "10", label: "Every 10 min" },
+    { value: "15", label: "Every 15 min" },
+    { value: "30", label: "Every 30 min" },
+  ];
+
+  const handleIntervalChange = (value: string) => {
+    updateGame.mutate(
+      { gameId: id, data: { syncInterval: Number(value) } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
+          toast.success(`Auto-sync interval set to ${value} min`);
+        },
+      }
+    );
   };
 
   const handleSheetSync = () => {
@@ -255,14 +282,14 @@ export default function AdminPanel() {
               </div>
               {game.sheetUrl && game.status === "active" && (
                 <div className="flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                  <RefreshCw className="w-3 h-3" />
-                  AUTO-SYNC EVERY 5 MIN
+                  <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: "3s" }} />
+                  AUTO-SYNC EVERY {game.syncInterval ?? 5} MIN
                 </div>
               )}
             </div>
             <CardDescription>
               Paste a public Google Sheet URL. The sheet should list your prop questions and their answers.
-              When the game is <strong>Active</strong>, it syncs automatically every 5 minutes — or click "Sync Now" any time.
+              When the game is <strong>Active</strong>, it syncs on your chosen schedule — or click "Sync Now" any time.
             </CardDescription>
             {game.lastSheetSync && (
               <p className="text-xs text-green-700 font-bold mt-1">
@@ -289,6 +316,30 @@ export default function AdminPanel() {
                   <><RefreshCw className="w-4 h-4 mr-2" /> Sync Now</>
                 )}
               </Button>
+            </div>
+
+            {/* Interval selector + sharing note */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-muted/40 rounded-lg border">
+              <div className="flex items-center gap-2 flex-1">
+                <RefreshCw className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-sm font-bold">Auto-sync interval</span>
+              </div>
+              <Select
+                value={String(game.syncInterval ?? 5)}
+                onValueChange={handleIntervalChange}
+                disabled={updateGame.isPending}
+              >
+                <SelectTrigger className="w-40 font-bold text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INTERVAL_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value} className="font-medium">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <p className="text-xs text-muted-foreground">
               Make sure the sheet is set to <strong>"Anyone with the link can view"</strong> in Google Sheets sharing settings.
