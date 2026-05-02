@@ -20,6 +20,7 @@ export const gamesTable = pgTable("games", {
   showBanner: boolean("show_banner").default(true),
   showPickReveal: boolean("show_pick_reveal").default(true),
   showTally: boolean("show_tally").default(true),
+  includeInArchive: boolean("include_in_archive").default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

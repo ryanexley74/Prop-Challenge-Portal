@@ -566,6 +566,10 @@ components:
           type: boolean
           nullable: true
           description: Show live tally strip for in-progress props on TV
+        includeInArchive:
+          type: boolean
+          nullable: true
+          description: Whether this game appears in the archive and tally tracking
         createdAt:
           type: string
           format: date-time
@@ -623,6 +627,10 @@ components:
         showTally:
           type: boolean
           nullable: true
+        includeInArchive:
+          type: boolean
+          nullable: true
+          description: Whether this game appears in the archive and tally tracking
         createdAt:
           type: string
           format: date-time
@@ -728,6 +736,10 @@ components:
         showTally:
           type: boolean
           nullable: true
+        includeInArchive:
+          type: boolean
+          nullable: true
+          description: Whether this game appears in the archive
 
     Prop:
       type: object

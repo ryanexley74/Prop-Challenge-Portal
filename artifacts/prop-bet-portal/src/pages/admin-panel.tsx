@@ -525,6 +525,29 @@ export default function AdminPanel() {
                   3. Completed
                 </Button>
               </div>
+
+              <div className="flex items-center justify-between pt-4 mt-2 border-t">
+                <div>
+                  <div className="font-bold text-sm">Include in Archive</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Show this game in the Game Archive and tally tracking. Uncheck to hide it without deleting anything.
+                  </div>
+                </div>
+                <Switch
+                  checked={game.includeInArchive !== false}
+                  onCheckedChange={(val) =>
+                    updateGame.mutate(
+                      { gameId: id, data: { includeInArchive: val } },
+                      {
+                        onSuccess: () => {
+                          queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
+                          toast.success(val ? "Game added to archive" : "Game hidden from archive");
+                        },
+                      }
+                    )
+                  }
+                />
+              </div>
             </CardContent>
           </Card>
           

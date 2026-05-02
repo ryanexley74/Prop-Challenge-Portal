@@ -78,6 +78,10 @@ export const ListGamesResponseItem = zod.object({
     .boolean()
     .nullish()
     .describe("Show live tally strip for in-progress props on TV"),
+  includeInArchive: zod
+    .boolean()
+    .nullish()
+    .describe("Whether this game appears in the archive and tally tracking"),
   createdAt: zod.coerce.date(),
 });
 export const ListGamesResponse = zod.array(ListGamesResponseItem);
@@ -139,6 +143,10 @@ export const FindGameByCodeResponse = zod.object({
     .boolean()
     .nullish()
     .describe("Show live tally strip for in-progress props on TV"),
+  includeInArchive: zod
+    .boolean()
+    .nullish()
+    .describe("Whether this game appears in the archive and tally tracking"),
   createdAt: zod.coerce.date(),
 });
 
@@ -192,6 +200,10 @@ export const GetGameResponse = zod.object({
   showBanner: zod.boolean().nullish(),
   showPickReveal: zod.boolean().nullish(),
   showTally: zod.boolean().nullish(),
+  includeInArchive: zod
+    .boolean()
+    .nullish()
+    .describe("Whether this game appears in the archive and tally tracking"),
   createdAt: zod.coerce.date(),
   props: zod.array(
     zod.object({
@@ -246,6 +258,10 @@ export const UpdateGameBody = zod.object({
   showBanner: zod.boolean().nullish(),
   showPickReveal: zod.boolean().nullish(),
   showTally: zod.boolean().nullish(),
+  includeInArchive: zod
+    .boolean()
+    .nullish()
+    .describe("Whether this game appears in the archive"),
 });
 
 export const UpdateGameResponse = zod.object({
@@ -290,6 +306,10 @@ export const UpdateGameResponse = zod.object({
     .boolean()
     .nullish()
     .describe("Show live tally strip for in-progress props on TV"),
+  includeInArchive: zod
+    .boolean()
+    .nullish()
+    .describe("Whether this game appears in the archive and tally tracking"),
   createdAt: zod.coerce.date(),
 });
 

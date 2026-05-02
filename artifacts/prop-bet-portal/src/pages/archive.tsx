@@ -114,7 +114,7 @@ export default function Archive() {
   const { data: games, isLoading } = useListGames();
 
   const completedGames = (games ?? [])
-    .filter((g) => g.status === "completed")
+    .filter((g) => g.status === "completed" && g.includeInArchive !== false)
     .slice()
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 

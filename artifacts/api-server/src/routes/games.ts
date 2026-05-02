@@ -134,6 +134,7 @@ router.patch("/games/:gameId", async (req, res) => {
     if (body.showBanner !== undefined) updates.showBanner = body.showBanner;
     if (body.showPickReveal !== undefined) updates.showPickReveal = body.showPickReveal;
     if (body.showTally !== undefined) updates.showTally = body.showTally;
+    if (body.includeInArchive !== undefined) updates.includeInArchive = body.includeInArchive;
 
     const [game] = await db.update(gamesTable)
       .set(updates)

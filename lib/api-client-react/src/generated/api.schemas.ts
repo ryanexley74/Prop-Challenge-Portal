@@ -65,6 +65,8 @@ export interface Game {
   showPickReveal?: boolean | null;
   /** Show live tally strip for in-progress props on TV */
   showTally?: boolean | null;
+  /** Whether this game appears in the archive and tally tracking */
+  includeInArchive?: boolean | null;
   createdAt: string;
 }
 
@@ -119,6 +121,8 @@ export interface GameDetail {
   showBanner?: boolean | null;
   showPickReveal?: boolean | null;
   showTally?: boolean | null;
+  /** Whether this game appears in the archive and tally tracking */
+  includeInArchive?: boolean | null;
   createdAt: string;
   props: Prop[];
   playerCount: number;
@@ -169,6 +173,8 @@ export interface UpdateGameBody {
   showBanner?: boolean | null;
   showPickReveal?: boolean | null;
   showTally?: boolean | null;
+  /** Whether this game appears in the archive */
+  includeInArchive?: boolean | null;
 }
 
 export type CreatePropBodyType =

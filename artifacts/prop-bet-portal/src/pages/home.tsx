@@ -220,7 +220,7 @@ export default function Home() {
         )}
 
         {/* Past Games section */}
-        {!isLoading && games && games.filter(g => g.status === "completed").length > 0 && (
+        {!isLoading && games && games.filter(g => g.status === "completed" && g.includeInArchive !== false).length > 0 && (
           <div className="mt-12">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
@@ -233,7 +233,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {games.filter(g => g.status === "completed").slice(0, 3).map((game) => (
+              {games.filter(g => g.status === "completed" && g.includeInArchive !== false).slice(0, 3).map((game) => (
                 <Card key={game.id} className="flex flex-col border-t-4 border-t-muted opacity-80 hover:opacity-100 transition-opacity">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2 mb-1">
