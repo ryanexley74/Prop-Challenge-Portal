@@ -3,20 +3,30 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for Sports Prop Bet Challenge Portal
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: games
+    description: Game management
+  - name: props
+    description: Prop question management
+  - name: players
+    description: Player management
+  - name: answers
+    description: Answer submission
+  - name: leaderboard
+    description: Leaderboard and scoring
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +34,293 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /games:
+    get:
+      operationId: listGames
+      tags: [games]
+      summary: List all games
+      responses:
+        "200":
+          description: List of games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Game"
+    post:
+      operationId: createGame
+      tags: [games]
+      summary: Create a new game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGameBody"
+      responses:
+        "201":
+          description: Created game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+
+  /games/{gameId}:
+    get:
+      operationId: getGame
+      tags: [games]
+      summary: Get a game by ID
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Game details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameDetail"
+        "404":
+          description: Game not found
+    patch:
+      operationId: updateGame
+      tags: [games]
+      summary: Update game (e.g. status)
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGameBody"
+      responses:
+        "200":
+          description: Updated game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+
+  /games/{gameId}/props:
+    get:
+      operationId: listProps
+      tags: [props]
+      summary: List all props for a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of props
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prop"
+    post:
+      operationId: createProp
+      tags: [props]
+      summary: Create a prop question
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePropBody"
+      responses:
+        "201":
+          description: Created prop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prop"
+
+  /props/{propId}:
+    patch:
+      operationId: updateProp
+      tags: [props]
+      summary: Resolve or update a prop
+      parameters:
+        - name: propId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePropBody"
+      responses:
+        "200":
+          description: Updated prop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prop"
+    delete:
+      operationId: deleteProp
+      tags: [props]
+      summary: Delete a prop
+      parameters:
+        - name: propId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /games/{gameId}/players:
+    get:
+      operationId: listPlayers
+      tags: [players]
+      summary: List players in a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
+    post:
+      operationId: joinGame
+      tags: [players]
+      summary: Join a game as a player
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinGameBody"
+      responses:
+        "201":
+          description: Player joined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /games/{gameId}/answers:
+    get:
+      operationId: listAnswers
+      tags: [answers]
+      summary: Get all answers for a game (for admin)
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: All answers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Answer"
+    post:
+      operationId: submitAnswers
+      tags: [answers]
+      summary: Submit answers for a player
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitAnswersBody"
+      responses:
+        "201":
+          description: Answers submitted
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Answer"
+
+  /games/{gameId}/leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get live leaderboard for a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Leaderboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Leaderboard"
+
+  /games/{gameId}/summary:
+    get:
+      operationId: getGameSummary
+      tags: [games]
+      summary: Get game summary stats (resolved props, total players, etc.)
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Game summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +331,289 @@ components:
       required:
         - status
 
+    Game:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [open, active, completed]
+        adminCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - status
+        - adminCode
+        - createdAt
+
+    GameDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [open, active, completed]
+        adminCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        props:
+          type: array
+          items:
+            $ref: "#/components/schemas/Prop"
+        playerCount:
+          type: integer
+      required:
+        - id
+        - name
+        - status
+        - adminCode
+        - createdAt
+        - props
+        - playerCount
+
+    CreateGameBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required:
+        - name
+
+    UpdateGameBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [open, active, completed]
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+
+    Prop:
+      type: object
+      properties:
+        id:
+          type: integer
+        gameId:
+          type: integer
+        question:
+          type: string
+        type:
+          type: string
+          enum: [yes_no, over_under]
+        threshold:
+          type: number
+          nullable: true
+        result:
+          type: boolean
+          nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        order:
+          type: integer
+      required:
+        - id
+        - gameId
+        - question
+        - type
+        - createdAt
+        - order
+
+    CreatePropBody:
+      type: object
+      properties:
+        question:
+          type: string
+        type:
+          type: string
+          enum: [yes_no, over_under]
+        threshold:
+          type: number
+          nullable: true
+        order:
+          type: integer
+      required:
+        - question
+        - type
+
+    UpdatePropBody:
+      type: object
+      properties:
+        result:
+          type: boolean
+          nullable: true
+        question:
+          type: string
+        order:
+          type: integer
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+        gameId:
+          type: integer
+        name:
+          type: string
+        joinedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - gameId
+        - name
+        - joinedAt
+
+    JoinGameBody:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    Answer:
+      type: object
+      properties:
+        id:
+          type: integer
+        propId:
+          type: integer
+        playerId:
+          type: integer
+        answer:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - propId
+        - playerId
+        - answer
+        - createdAt
+
+    SubmitAnswersBody:
+      type: object
+      properties:
+        playerId:
+          type: integer
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              propId:
+                type: integer
+              answer:
+                type: boolean
+            required:
+              - propId
+              - answer
+      required:
+        - playerId
+        - answers
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        playerId:
+          type: integer
+        playerName:
+          type: string
+        score:
+          type: integer
+        correctAnswers:
+          type: integer
+        totalResolved:
+          type: integer
+        rank:
+          type: integer
+      required:
+        - playerId
+        - playerName
+        - score
+        - correctAnswers
+        - totalResolved
+        - rank
+
+    Leaderboard:
+      type: object
+      properties:
+        gameId:
+          type: integer
+        gameName:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        resolvedPropCount:
+          type: integer
+        totalPropCount:
+          type: integer
+      required:
+        - gameId
+        - gameName
+        - entries
+        - resolvedPropCount
+        - totalPropCount
+
+    GameSummary:
+      type: object
+      properties:
+        gameId:
+          type: integer
+        gameName:
+          type: string
+        status:
+          type: string
+          enum: [open, active, completed]
+        totalProps:
+          type: integer
+        resolvedProps:
+          type: integer
+        totalPlayers:
+          type: integer
+        topPlayer:
+          type: string
+          nullable: true
+        topScore:
+          type: integer
+          nullable: true
+      required:
+        - gameId
+        - gameName
+        - status
+        - totalProps
+        - resolvedProps
+        - totalPlayers

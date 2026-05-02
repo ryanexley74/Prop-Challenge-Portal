@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Prop Bet Challenge"
+version = "1.0.0"
+id = "artifacts/prop-bet-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24371
+
+[services.development]
+run = "pnpm --filter @workspace/prop-bet-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/prop-bet-portal", "run", "build" ]
+publicDir = "artifacts/prop-bet-portal/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24371"
+BASE_PATH = "/"

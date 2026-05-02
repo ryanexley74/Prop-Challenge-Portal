@@ -1,0 +1,306 @@
+import { useState } from "react";
+import { useParams, Link } from "wouter";
+import { 
+  useGetGame, useListProps, useCreateProp, useUpdateProp, useDeleteProp, useUpdateGame,
+  getGetGameQueryKey, getListPropsQueryKey 
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Settings, ShieldAlert, Plus, Trash2, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+
+type PropType = "yes_no" | "over_under";
+
+export default function AdminPanel() {
+  const { gameId } = useParams();
+  const id = Number(gameId);
+  const queryClient = useQueryClient();
+
+  const { data: game, isLoading: gameLoading } = useGetGame(id, {
+    query: { enabled: !!id, queryKey: getGetGameQueryKey(id) }
+  });
+
+  const { data: props, isLoading: propsLoading } = useListProps(id, {
+    query: { enabled: !!id, queryKey: getListPropsQueryKey(id) }
+  });
+
+  const createProp = useCreateProp();
+  const updateProp = useUpdateProp();
+  const deleteProp = useDeleteProp();
+  const updateGame = useUpdateGame();
+
+  const [propOpen, setPropOpen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [type, setType] = useState<PropType>("yes_no");
+  const [threshold, setThreshold] = useState("");
+
+  if (gameLoading || propsLoading) {
+    return <div className="p-8"><Skeleton className="h-96 w-full rounded-xl" /></div>;
+  }
+
+  if (!game) {
+    return <div className="p-8 text-center text-xl font-bold">Game not found</div>;
+  }
+
+  const handleCreateProp = () => {
+    if (!question) return;
+    createProp.mutate(
+      { 
+        gameId: id, 
+        data: { 
+          question, 
+          type, 
+          threshold: threshold ? Number(threshold) : undefined,
+          order: props ? props.length : 0 
+        } 
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPropsQueryKey(id) });
+          setPropOpen(false);
+          setQuestion("");
+          setThreshold("");
+          toast.success("Prop added!");
+        }
+      }
+    );
+  };
+
+  const handleResolveProp = (propId: number, result: boolean | null) => {
+    updateProp.mutate(
+      { propId, data: { result } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPropsQueryKey(id) });
+          toast.success("Prop resolved!");
+        }
+      }
+    );
+  };
+
+  const handleDeleteProp = (propId: number) => {
+    if (confirm("Are you sure you want to delete this prop?")) {
+      deleteProp.mutate(
+        { propId },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListPropsQueryKey(id) });
+            toast.success("Prop deleted.");
+          }
+        }
+      );
+    }
+  };
+
+  const handleStatusChange = (status: "open" | "active" | "completed") => {
+    updateGame.mutate(
+      { gameId: id, data: { status } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
+          toast.success(`Game status changed to ${status}`);
+        }
+      }
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-muted/30 pb-20">
+      <header className="bg-[#0f172a] text-white py-6 shadow-md mb-8">
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="w-8 h-8 text-primary" />
+            <div>
+              <h1 className="text-2xl font-black uppercase tracking-wider">Admin Panel</h1>
+              <p className="text-sm font-bold opacity-70">Game: {game.name}</p>
+            </div>
+          </div>
+          <Link href={`/games/${id}`} className="inline-flex items-center gap-2 text-sm font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors">
+            View Live Hub <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="col-span-1 md:col-span-2 border-primary border-2">
+            <CardHeader className="bg-primary/5 pb-4">
+              <CardTitle className="text-lg font-black uppercase">Game Status Controls</CardTitle>
+              <CardDescription>Control when players can join and when the game ends.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap gap-4">
+                <Button 
+                  variant={game.status === "open" ? "default" : "outline"}
+                  onClick={() => handleStatusChange("open")}
+                  className="font-bold uppercase tracking-wider"
+                >
+                  1. Open (Accepting Picks)
+                </Button>
+                <Button 
+                  variant={game.status === "active" ? "default" : "outline"}
+                  onClick={() => handleStatusChange("active")}
+                  className="font-bold uppercase tracking-wider"
+                >
+                  2. Active (Locked)
+                </Button>
+                <Button 
+                  variant={game.status === "completed" ? "default" : "outline"}
+                  onClick={() => handleStatusChange("completed")}
+                  className="font-bold uppercase tracking-wider"
+                >
+                  3. Completed
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="bg-muted pb-4">
+              <CardTitle className="text-lg font-black uppercase">Admin Code</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 text-center">
+              <div className="font-mono text-3xl font-black tracking-widest text-primary p-4 bg-muted/50 rounded-lg">
+                {game.adminCode}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 font-bold uppercase">Save this code to return later</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-black uppercase flex items-center gap-2">
+            <Settings className="w-6 h-6 text-primary" /> Manage Props
+          </h2>
+          <Dialog open={propOpen} onOpenChange={setPropOpen}>
+            <DialogTrigger asChild>
+              <Button className="font-bold uppercase tracking-wider">
+                <Plus className="w-4 h-4 mr-2" /> Add Prop
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-black uppercase text-xl">Create New Prop</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label className="font-bold">Type</Label>
+                  <Select value={type} onValueChange={(val: PropType) => setType(val)}>
+                    <SelectTrigger className="font-bold">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes_no">Yes / No</SelectItem>
+                      <SelectItem value="over_under">Over / Under</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-bold">Question</Label>
+                  <Input 
+                    placeholder="e.g. Will the coin toss be heads?" 
+                    value={question} 
+                    onChange={(e) => setQuestion(e.target.value)} 
+                    className="font-medium"
+                  />
+                </div>
+                {type === "over_under" && (
+                  <div className="space-y-2">
+                    <Label className="font-bold">Line / Threshold (Optional)</Label>
+                    <Input 
+                      type="number" 
+                      placeholder="e.g. 45.5" 
+                      value={threshold} 
+                      onChange={(e) => setThreshold(e.target.value)}
+                      className="font-medium font-mono"
+                    />
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button onClick={handleCreateProp} disabled={createProp.isPending} className="font-bold uppercase w-full">
+                  {createProp.isPending ? "Creating..." : "Save Prop"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="space-y-4">
+          {props?.map((prop, idx) => (
+            <Card key={prop.id} className={`border-l-4 ${prop.result !== null ? 'border-l-muted opacity-60' : 'border-l-primary'} overflow-hidden`}>
+              <div className="flex flex-col md:flex-row md:items-center">
+                <div className="p-4 flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Prop {idx + 1}</div>
+                      <div className="font-bold text-lg">{prop.question}</div>
+                      {prop.threshold && (
+                        <div className="inline-block mt-2 px-2 py-1 bg-muted rounded text-sm font-bold font-mono">
+                          Line: {prop.threshold}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-muted p-4 md:w-64 flex flex-col justify-center border-t md:border-t-0 md:border-l">
+                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 text-center">
+                    Resolve Result
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant={prop.result === true ? "default" : "outline"} 
+                      size="sm"
+                      className="font-black uppercase"
+                      onClick={() => handleResolveProp(prop.id, true)}
+                    >
+                      {prop.type === "yes_no" ? "Yes" : "Over"}
+                    </Button>
+                    <Button 
+                      variant={prop.result === false ? "secondary" : "outline"} 
+                      size="sm"
+                      className="font-black uppercase"
+                      onClick={() => handleResolveProp(prop.id, false)}
+                    >
+                      {prop.type === "yes_no" ? "No" : "Under"}
+                    </Button>
+                  </div>
+                  {prop.result !== null && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="mt-2 text-xs uppercase font-bold"
+                      onClick={() => handleResolveProp(prop.id, null)}
+                    >
+                      Clear Result
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="bg-destructive/10 p-2 md:p-4 flex justify-center items-center">
+                  <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive hover:text-white" onClick={() => handleDeleteProp(prop.id)}>
+                    <Trash2 className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+          {props?.length === 0 && (
+            <Card className="p-12 text-center border-dashed">
+              <p className="text-lg font-bold text-muted-foreground uppercase">No props created yet</p>
+              <Button variant="outline" className="mt-4 font-bold" onClick={() => setPropOpen(true)}>Add your first prop</Button>
+            </Card>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
