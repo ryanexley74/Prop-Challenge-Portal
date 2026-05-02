@@ -29,25 +29,123 @@ interface ResolvedNotif {
   question: string;
   type: string;
   result: boolean;
+  trueCount: number;
+  falseCount: number;
 }
 
 const BANNER_SHOW_MS = 4200;
 const BANNER_DRAIN_MS = 4000;
+const REVEAL_SHOW_MS  = 4500;
+const REVEAL_DRAIN_MS = 4200;
 
-interface BannerProps {
-  notif: ResolvedNotif;
-  onDone: () => void;
-  soundEnabled: boolean;
-  soundChoice: string;
-}
+// ─── Pick reveal overlay ──────────────────────────────────────────────────
 
-function PropResolvedBanner({ notif, onDone, soundEnabled, soundChoice }: BannerProps) {
+function PickRevealOverlay({ notif, onDone }: { notif: ResolvedNotif; onDone: () => void }) {
   const [leaving, setLeaving] = useState(false);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 
   useEffect(() => {
-    if (soundEnabled) playPropSound(soundChoice);
+    const leaveTimer = setTimeout(() => setLeaving(true), REVEAL_DRAIN_MS);
+    const doneTimer  = setTimeout(() => onDoneRef.current(), REVEAL_SHOW_MS);
+    return () => { clearTimeout(leaveTimer); clearTimeout(doneTimer); };
+  }, [notif.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const total = notif.trueCount + notif.falseCount;
+  const truePct  = total > 0 ? Math.round((notif.trueCount  / total) * 100) : 50;
+  const falsePct = total > 0 ? Math.round((notif.falseCount / total) * 100) : 50;
+  const trueLabel  = notif.type === "yes_no" ? "YES" : "OVER";
+  const falseLabel = notif.type === "yes_no" ? "NO"  : "UNDER";
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: "50%", left: "50%",
+        zIndex: 44,
+        animation: leaving
+          ? "fadeOutScale 0.3s ease-in forwards"
+          : "fadeInScale 0.45s cubic-bezier(0.34,1.4,0.64,1) forwards",
+        pointerEvents: "none",
+        width: "clamp(480px, 62vw, 900px)",
+      }}
+    >
+      <div
+        style={{
+          background: "linear-gradient(160deg, rgba(10,18,36,0.98), rgba(7,15,28,0.98))",
+          border: "2px solid rgba(249,115,22,0.35)",
+          borderRadius: 20,
+          padding: "28px 40px 24px",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(249,115,22,0.12)",
+          backdropFilter: "blur(16px)",
+        }}
+      >
+        {/* Header */}
+        <div style={{ color: "#f97316", fontSize: "0.65rem", fontWeight: 900, letterSpacing: "0.45em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>
+          🎯 How Did Everyone Vote?
+        </div>
+
+        {/* Question */}
+        <div style={{ color: "#f8fafc", fontSize: "clamp(1rem, 2vw, 1.35rem)", fontWeight: 900, textAlign: "center", lineHeight: 1.25, textTransform: "uppercase", letterSpacing: "0.02em", marginBottom: 20 }}>
+          {notif.question}
+        </div>
+
+        {/* Vote split */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+          {/* True side */}
+          <div
+            style={{
+              flex: truePct, background: "rgba(34,197,94,0.15)", border: "2px solid rgba(34,197,94,0.5)",
+              borderRadius: 12, padding: "14px 20px", textAlign: "center",
+              boxShadow: notif.trueCount >= notif.falseCount ? "0 0 24px rgba(34,197,94,0.2)" : "none",
+            }}
+          >
+            <div style={{ color: "#22c55e", fontSize: "clamp(1.5rem, 3vw, 2.5rem)", fontWeight: 900, lineHeight: 1 }}>{notif.trueCount}</div>
+            <div style={{ color: "#22c55e", fontSize: "0.9rem", fontWeight: 900, marginTop: 4 }}>{trueLabel}</div>
+            <div style={{ color: "rgba(34,197,94,0.6)", fontSize: "0.75rem", fontWeight: 700, marginTop: 2 }}>{truePct}%</div>
+          </div>
+
+          {/* False side */}
+          <div
+            style={{
+              flex: falsePct, background: "rgba(239,68,68,0.12)", border: "2px solid rgba(239,68,68,0.4)",
+              borderRadius: 12, padding: "14px 20px", textAlign: "center",
+              boxShadow: notif.falseCount > notif.trueCount ? "0 0 24px rgba(239,68,68,0.2)" : "none",
+            }}
+          >
+            <div style={{ color: "#ef4444", fontSize: "clamp(1.5rem, 3vw, 2.5rem)", fontWeight: 900, lineHeight: 1 }}>{notif.falseCount}</div>
+            <div style={{ color: "#ef4444", fontSize: "0.9rem", fontWeight: 900, marginTop: 4 }}>{falseLabel}</div>
+            <div style={{ color: "rgba(239,68,68,0.6)", fontSize: "0.75rem", fontWeight: 700, marginTop: 2 }}>{falsePct}%</div>
+          </div>
+        </div>
+
+        {/* Progress split bar */}
+        <div style={{ height: 6, borderRadius: 4, overflow: "hidden", background: "rgba(239,68,68,0.3)", display: "flex" }}>
+          <div style={{ width: `${truePct}%`, background: "linear-gradient(to right, #16a34a, #22c55e)", transition: "width 0.8s ease" }} />
+        </div>
+
+        {/* Drain bar */}
+        <div style={{ marginTop: 12, height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ height: "100%", background: "rgba(249,115,22,0.7)", borderRadius: 2, animation: `drainBar ${REVEAL_DRAIN_MS}ms linear forwards` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Prop resolved banner ─────────────────────────────────────────────────
+
+interface BannerProps {
+  notif: ResolvedNotif;
+  onDone: () => void;
+}
+
+function PropResolvedBanner({ notif, onDone }: BannerProps) {
+  const [leaving, setLeaving] = useState(false);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  useEffect(() => {
     const leaveTimer = setTimeout(() => setLeaving(true), BANNER_DRAIN_MS);
     const doneTimer  = setTimeout(() => onDoneRef.current(), BANNER_SHOW_MS);
     return () => { clearTimeout(leaveTimer); clearTimeout(doneTimer); };
@@ -409,6 +507,7 @@ export default function TvMode() {
   const id = Number(gameId);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
   const [notifQueue, setNotifQueue] = useState<ResolvedNotif[]>([]);
+  const [revealQueue, setRevealQueue] = useState<ResolvedNotif[]>([]);
   const prevStatusRef = useRef<string | null>(null);
   const seenResolvedIdsRef = useRef<Set<number>>(new Set());
   const initialLoadDoneRef = useRef(false);
@@ -416,6 +515,9 @@ export default function TvMode() {
   const { data: game } = useGetGame(id, {
     query: { enabled: !!id, queryKey: getGetGameQueryKey(id), refetchInterval: 3000 },
   });
+
+  const gameRef = useRef(game);
+  useEffect(() => { gameRef.current = game; }, [game]);
 
   const { data: leaderboard } = useGetLeaderboard(id, {
     query: { enabled: !!id, queryKey: getGetLeaderboardQueryKey(id), refetchInterval: 3000 },
@@ -445,16 +547,41 @@ export default function TvMode() {
     const fresh = resolved.filter((p) => !seenResolvedIdsRef.current.has(p.id));
     if (fresh.length === 0) return;
     fresh.forEach((p) => seenResolvedIdsRef.current.add(p.id));
-    setNotifQueue((prev) => [
-      ...prev,
-      ...fresh.map((p) => ({
-        id: p.id,
-        question: p.question,
-        type: p.type,
-        result: p.result as boolean,
-      })),
-    ]);
+
+    // Play sound immediately when prop resolves
+    if (gameRef.current?.soundEnabled ?? true) {
+      playPropSound((gameRef.current?.soundChoice ?? "chime") as import("@/lib/prop-sounds").SoundChoice);
+    }
+
+    const items: ResolvedNotif[] = fresh.map((p) => ({
+      id: p.id,
+      question: p.question,
+      type: p.type,
+      result: p.result as boolean,
+      trueCount: (p as { trueCount?: number }).trueCount ?? 0,
+      falseCount: (p as { falseCount?: number }).falseCount ?? 0,
+    }));
+
+    const showReveal = gameRef.current?.showPickReveal ?? true;
+    const showBanner = gameRef.current?.showBanner ?? true;
+
+    if (showReveal) {
+      setRevealQueue((prev) => [...prev, ...items]);
+    } else if (showBanner) {
+      setNotifQueue((prev) => [...prev, ...items]);
+    }
   }, [game?.props]);
+
+  // When pick reveal finishes, push to banner queue (if banners enabled)
+  const dismissReveal = useCallback(() => {
+    setRevealQueue((prev) => {
+      const [current, ...rest] = prev;
+      if (current && (gameRef.current?.showBanner ?? true)) {
+        setNotifQueue((q) => [...q, current]);
+      }
+      return rest;
+    });
+  }, []);
 
   const dismissNotif = useCallback(() => {
     setNotifQueue((prev) => prev.slice(1));
@@ -504,14 +631,21 @@ export default function TvMode() {
         />
       )}
 
+      {/* Pick reveal overlay — shows first, then triggers banner */}
+      {revealQueue[0] && (
+        <PickRevealOverlay
+          key={`reveal-${revealQueue[0].id}`}
+          notif={revealQueue[0]}
+          onDone={dismissReveal}
+        />
+      )}
+
       {/* Prop resolved notification banner */}
       {notifQueue[0] && (
         <PropResolvedBanner
           key={notifQueue[0].id}
           notif={notifQueue[0]}
           onDone={dismissNotif}
-          soundEnabled={game?.soundEnabled ?? true}
-          soundChoice={game?.soundChoice ?? "chime"}
         />
       )}
 
@@ -546,8 +680,8 @@ export default function TvMode() {
             </div>
           </div>
 
-          {/* Sync countdown — only shown when auto-sync is active */}
-          {game?.sheetUrl && game?.status === "active" && (
+          {/* Sync countdown — only shown when auto-sync is active and toggle is on */}
+          {(game?.showCountdown ?? true) && game?.sheetUrl && game?.status === "active" && (
             <div className="flex flex-col items-center gap-1">
               <SyncCountdownRing
                 lastSheetSync={game.lastSheetSync ?? null}
@@ -659,8 +793,10 @@ export default function TvMode() {
         </div>
       )}
 
-      {/* Scrolling ticker */}
-      <ResultsTicker items={resolvedProps} status={game?.status ?? ""} />
+      {/* Scrolling ticker — only when toggle is on */}
+      {(game?.showTicker ?? true) && (
+        <ResultsTicker items={resolvedProps} status={game?.status ?? ""} />
+      )}
     </div>
   );
 }

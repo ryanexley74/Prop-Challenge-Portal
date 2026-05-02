@@ -31,6 +31,14 @@ export interface Game {
   soundEnabled?: boolean | null;
   /** Sound effect to play (chime, whistle, airhorn, register, broadcast) */
   soundChoice?: string | null;
+  /** Show sync countdown ring on TV */
+  showCountdown?: boolean | null;
+  /** Show scrolling results ticker on TV */
+  showTicker?: boolean | null;
+  /** Show prop-resolved notification banner on TV */
+  showBanner?: boolean | null;
+  /** Show pick reveal overlay before result on TV */
+  showPickReveal?: boolean | null;
   createdAt: string;
 }
 
@@ -60,6 +68,10 @@ export interface Prop {
   resolvedAt?: string | null;
   createdAt: string;
   order: number;
+  /** Number of players who picked YES/OVER */
+  trueCount?: number | null;
+  /** Number of players who picked NO/UNDER */
+  falseCount?: number | null;
 }
 
 export interface GameDetail {
@@ -72,10 +84,12 @@ export interface GameDetail {
   /** Auto-sync interval in minutes */
   syncInterval?: number | null;
   lastSheetSync?: string | null;
-  /** Whether sound plays on TV when a prop resolves */
   soundEnabled?: boolean | null;
-  /** Sound effect to play (chime, whistle, airhorn, register, broadcast) */
   soundChoice?: string | null;
+  showCountdown?: boolean | null;
+  showTicker?: boolean | null;
+  showBanner?: boolean | null;
+  showPickReveal?: boolean | null;
   createdAt: string;
   props: Prop[];
   playerCount: number;
@@ -119,10 +133,12 @@ export interface UpdateGameBody {
   sheetUrl?: string | null;
   /** Auto-sync interval in minutes */
   syncInterval?: number | null;
-  /** Whether sound plays on TV when a prop resolves */
   soundEnabled?: boolean | null;
-  /** Sound effect to play (chime, whistle, airhorn, register, broadcast) */
   soundChoice?: string | null;
+  showCountdown?: boolean | null;
+  showTicker?: boolean | null;
+  showBanner?: boolean | null;
+  showPickReveal?: boolean | null;
 }
 
 export type CreatePropBodyType =

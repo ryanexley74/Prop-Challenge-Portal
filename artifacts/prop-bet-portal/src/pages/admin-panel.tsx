@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle, Volume2, VolumeX } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { SyncCountdownRing } from "@/components/sync-countdown-ring";
 import { SOUND_OPTIONS, playPropSound, type SoundChoice } from "@/lib/prop-sounds";
 import { toast } from "sonner";
@@ -150,14 +151,24 @@ export default function AdminPanel() {
     );
   };
 
-  const handleSoundToggle = () => {
-    const next = !(game.soundEnabled ?? true);
+  const handleSoundToggle = (enabled: boolean) => {
     updateGame.mutate(
-      { gameId: id, data: { soundEnabled: next } },
+      { gameId: id, data: { soundEnabled: enabled } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
-          toast.success(next ? "TV sound enabled" : "TV sound muted");
+          toast.success(enabled ? "TV sound enabled" : "TV sound muted");
+        },
+      }
+    );
+  };
+
+  const handleTvToggle = (field: "showBanner" | "showPickReveal" | "showCountdown" | "showTicker", value: boolean) => {
+    updateGame.mutate(
+      { gameId: id, data: { [field]: value } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
         },
       }
     );
@@ -423,72 +434,116 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
 
-        {/* TV Sound Settings */}
-        <Card className="mb-8 border-2 border-blue-500/30">
-          <CardHeader className="bg-blue-500/5 pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {(game.soundEnabled ?? true) ? (
-                  <Volume2 className="w-5 h-5 text-blue-600" />
-                ) : (
-                  <VolumeX className="w-5 h-5 text-muted-foreground" />
-                )}
-                <CardTitle className="text-lg font-black uppercase">TV Sound</CardTitle>
-              </div>
-              <button
-                onClick={handleSoundToggle}
-                disabled={updateGame.isPending}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all border ${
-                  (game.soundEnabled ?? true)
-                    ? "bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200"
-                    : "bg-muted text-muted-foreground border-muted-foreground/30 hover:bg-muted/80"
-                }`}
-              >
-                {(game.soundEnabled ?? true) ? (
-                  <><Volume2 className="w-3.5 h-3.5" /> Sound On</>
-                ) : (
-                  <><VolumeX className="w-3.5 h-3.5" /> Muted</>
-                )}
-              </button>
+        {/* TV Display Controls */}
+        <Card className="mb-8 border-2 border-purple-500/30">
+          <CardHeader className="bg-purple-500/5 pb-3">
+            <div className="flex items-center gap-2">
+              <Tv2 className="w-5 h-5 text-purple-600" />
+              <CardTitle className="text-lg font-black uppercase">TV Display Controls</CardTitle>
             </div>
             <CardDescription>
-              Choose a sound that plays on the TV screen each time a prop resolves.
-              Selecting a sound previews it immediately.
+              Control exactly what appears on the TV screen during the game.
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {SOUND_OPTIONS.map((opt) => {
-                const isSelected = (game.soundChoice ?? "chime") === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => handleSoundChange(opt.value)}
-                    disabled={updateGame.isPending || !(game.soundEnabled ?? true)}
-                    className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 text-left transition-all ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-50 shadow-sm"
-                        : "border-border bg-background hover:border-blue-300 hover:bg-blue-50/50"
-                    } disabled:opacity-40 disabled:cursor-not-allowed`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-black text-sm">{opt.label}</span>
-                      {isSelected && (
-                        <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground">{opt.description}</span>
-                  </button>
-                );
-              })}
+          <CardContent className="pt-0 divide-y">
+
+            {/* Prop Resolved Banner */}
+            <div className="flex items-center justify-between py-4">
+              <div>
+                <div className="font-bold text-sm">🔔 Prop Resolved Banner</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Slide-in notification at the top when a prop resolves</div>
+              </div>
+              <Switch
+                checked={game.showBanner ?? true}
+                disabled={updateGame.isPending}
+                onCheckedChange={(v) => handleTvToggle("showBanner", v)}
+              />
             </div>
-            {!(game.soundEnabled ?? true) && (
-              <p className="text-xs text-muted-foreground mt-3 text-center">
-                Sound is muted — enable it above to hear sounds on the TV screen.
-              </p>
-            )}
+
+            {/* Pick Reveal */}
+            <div className="flex items-center justify-between py-4">
+              <div>
+                <div className="font-bold text-sm">🎯 Pick Reveal</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Show how everyone voted before revealing the result</div>
+              </div>
+              <Switch
+                checked={game.showPickReveal ?? true}
+                disabled={updateGame.isPending}
+                onCheckedChange={(v) => handleTvToggle("showPickReveal", v)}
+              />
+            </div>
+
+            {/* Sound */}
+            <div className="py-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-sm flex items-center gap-1.5">
+                    {(game.soundEnabled ?? true) ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
+                    Sound Effect
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Play a sound when a prop resolves</div>
+                </div>
+                <Switch
+                  checked={game.soundEnabled ?? true}
+                  disabled={updateGame.isPending}
+                  onCheckedChange={(v) => handleSoundToggle(v)}
+                />
+              </div>
+              {(game.soundEnabled ?? true) && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {SOUND_OPTIONS.map((opt) => {
+                    const isSelected = (game.soundChoice ?? "chime") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleSoundChange(opt.value)}
+                        disabled={updateGame.isPending}
+                        className={`flex flex-col items-start gap-0.5 p-2.5 rounded-xl border-2 text-left transition-all ${
+                          isSelected
+                            ? "border-purple-500 bg-purple-50 shadow-sm"
+                            : "border-border bg-background hover:border-purple-300 hover:bg-purple-50/50"
+                        } disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-black text-xs">{opt.label}</span>
+                          {isSelected && (
+                            <span className="text-[9px] font-black uppercase tracking-wider text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full">On</span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">{opt.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Sync Countdown */}
+            <div className="flex items-center justify-between py-4">
+              <div>
+                <div className="font-bold text-sm">⏱ Sync Countdown</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Countdown ring to next sheet sync (top right of TV)</div>
+              </div>
+              <Switch
+                checked={game.showCountdown ?? true}
+                disabled={updateGame.isPending}
+                onCheckedChange={(v) => handleTvToggle("showCountdown", v)}
+              />
+            </div>
+
+            {/* Scrolling Ticker */}
+            <div className="flex items-center justify-between py-4">
+              <div>
+                <div className="font-bold text-sm">📜 Scrolling Ticker</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Results ticker scrolling along the bottom of the TV</div>
+              </div>
+              <Switch
+                checked={game.showTicker ?? true}
+                disabled={updateGame.isPending}
+                onCheckedChange={(v) => handleTvToggle("showTicker", v)}
+              />
+            </div>
+
           </CardContent>
         </Card>
 

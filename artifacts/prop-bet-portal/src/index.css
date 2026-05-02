@@ -177,3 +177,13 @@
   from { width: 100%; }
   to   { width: 0%; }
 }
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes fadeOutScale {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to   { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
+}

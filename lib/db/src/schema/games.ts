@@ -15,6 +15,10 @@ export const gamesTable = pgTable("games", {
   lastSheetSync: timestamp("last_sheet_sync"),
   soundEnabled: boolean("sound_enabled").default(true),
   soundChoice: text("sound_choice").default("chime"),
+  showCountdown: boolean("show_countdown").default(true),
+  showTicker: boolean("show_ticker").default(true),
+  showBanner: boolean("show_banner").default(true),
+  showPickReveal: boolean("show_pick_reveal").default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

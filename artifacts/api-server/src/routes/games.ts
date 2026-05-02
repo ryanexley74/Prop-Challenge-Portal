@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { gamesTable, propsTable, playersTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { gamesTable, propsTable, playersTable, answersTable } from "@workspace/db";
+import { eq, sql, inArray } from "drizzle-orm";
 import {
   CreateGameBody,
   UpdateGameBody,
@@ -76,6 +76,26 @@ router.get("/games/:gameId", async (req, res) => {
       .from(playersTable)
       .where(eq(playersTable.gameId, gameId));
 
+    // Fetch pick counts per prop for pick-reveal overlay
+    const propIds = props.map(p => p.id);
+    const pickCounts: Record<number, { trueCount: number; falseCount: number }> = {};
+    if (propIds.length > 0) {
+      const rows = await db
+        .select({
+          propId: answersTable.propId,
+          answer: answersTable.answer,
+          cnt: sql<number>`count(*)::int`,
+        })
+        .from(answersTable)
+        .where(inArray(answersTable.propId, propIds))
+        .groupBy(answersTable.propId, answersTable.answer);
+      for (const row of rows) {
+        if (!pickCounts[row.propId]) pickCounts[row.propId] = { trueCount: 0, falseCount: 0 };
+        if (row.answer) pickCounts[row.propId].trueCount = row.cnt;
+        else pickCounts[row.propId].falseCount = row.cnt;
+      }
+    }
+
     res.json({
       ...game,
       createdAt: game.createdAt.toISOString(),
@@ -84,6 +104,8 @@ router.get("/games/:gameId", async (req, res) => {
         ...p,
         createdAt: p.createdAt.toISOString(),
         resolvedAt: p.resolvedAt?.toISOString() ?? null,
+        trueCount: pickCounts[p.id]?.trueCount ?? 0,
+        falseCount: pickCounts[p.id]?.falseCount ?? 0,
       })),
       playerCount: count,
     });
@@ -107,6 +129,10 @@ router.patch("/games/:gameId", async (req, res) => {
     if (body.syncInterval !== undefined) updates.syncInterval = body.syncInterval;
     if (body.soundEnabled !== undefined) updates.soundEnabled = body.soundEnabled;
     if (body.soundChoice !== undefined) updates.soundChoice = body.soundChoice;
+    if (body.showCountdown !== undefined) updates.showCountdown = body.showCountdown;
+    if (body.showTicker !== undefined) updates.showTicker = body.showTicker;
+    if (body.showBanner !== undefined) updates.showBanner = body.showBanner;
+    if (body.showPickReveal !== undefined) updates.showPickReveal = body.showPickReveal;
 
     const [game] = await db.update(gamesTable)
       .set(updates)

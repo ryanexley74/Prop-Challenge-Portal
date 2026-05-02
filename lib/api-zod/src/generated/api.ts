@@ -39,6 +39,22 @@ export const ListGamesResponseItem = zod.object({
     .describe(
       "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
     ),
+  showCountdown: zod
+    .boolean()
+    .nullish()
+    .describe("Show sync countdown ring on TV"),
+  showTicker: zod
+    .boolean()
+    .nullish()
+    .describe("Show scrolling results ticker on TV"),
+  showBanner: zod
+    .boolean()
+    .nullish()
+    .describe("Show prop-resolved notification banner on TV"),
+  showPickReveal: zod
+    .boolean()
+    .nullish()
+    .describe("Show pick reveal overlay before result on TV"),
   createdAt: zod.coerce.date(),
 });
 export const ListGamesResponse = zod.array(ListGamesResponseItem);
@@ -80,6 +96,22 @@ export const FindGameByCodeResponse = zod.object({
     .describe(
       "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
     ),
+  showCountdown: zod
+    .boolean()
+    .nullish()
+    .describe("Show sync countdown ring on TV"),
+  showTicker: zod
+    .boolean()
+    .nullish()
+    .describe("Show scrolling results ticker on TV"),
+  showBanner: zod
+    .boolean()
+    .nullish()
+    .describe("Show prop-resolved notification banner on TV"),
+  showPickReveal: zod
+    .boolean()
+    .nullish()
+    .describe("Show pick reveal overlay before result on TV"),
   createdAt: zod.coerce.date(),
 });
 
@@ -126,16 +158,12 @@ export const GetGameResponse = zod.object({
     .nullish()
     .describe("Auto-sync interval in minutes"),
   lastSheetSync: zod.coerce.date().nullish(),
-  soundEnabled: zod
-    .boolean()
-    .nullish()
-    .describe("Whether sound plays on TV when a prop resolves"),
-  soundChoice: zod
-    .string()
-    .nullish()
-    .describe(
-      "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
-    ),
+  soundEnabled: zod.boolean().nullish(),
+  soundChoice: zod.string().nullish(),
+  showCountdown: zod.boolean().nullish(),
+  showTicker: zod.boolean().nullish(),
+  showBanner: zod.boolean().nullish(),
+  showPickReveal: zod.boolean().nullish(),
   createdAt: zod.coerce.date(),
   props: zod.array(
     zod.object({
@@ -148,6 +176,14 @@ export const GetGameResponse = zod.object({
       resolvedAt: zod.coerce.date().nullish(),
       createdAt: zod.coerce.date(),
       order: zod.number(),
+      trueCount: zod
+        .number()
+        .nullish()
+        .describe("Number of players who picked YES\/OVER"),
+      falseCount: zod
+        .number()
+        .nullish()
+        .describe("Number of players who picked NO\/UNDER"),
     }),
   ),
   playerCount: zod.number(),
@@ -169,16 +205,12 @@ export const UpdateGameBody = zod.object({
     .number()
     .nullish()
     .describe("Auto-sync interval in minutes"),
-  soundEnabled: zod
-    .boolean()
-    .nullish()
-    .describe("Whether sound plays on TV when a prop resolves"),
-  soundChoice: zod
-    .string()
-    .nullish()
-    .describe(
-      "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
-    ),
+  soundEnabled: zod.boolean().nullish(),
+  soundChoice: zod.string().nullish(),
+  showCountdown: zod.boolean().nullish(),
+  showTicker: zod.boolean().nullish(),
+  showBanner: zod.boolean().nullish(),
+  showPickReveal: zod.boolean().nullish(),
 });
 
 export const UpdateGameResponse = zod.object({
@@ -203,6 +235,22 @@ export const UpdateGameResponse = zod.object({
     .describe(
       "Sound effect to play (chime, whistle, airhorn, register, broadcast)",
     ),
+  showCountdown: zod
+    .boolean()
+    .nullish()
+    .describe("Show sync countdown ring on TV"),
+  showTicker: zod
+    .boolean()
+    .nullish()
+    .describe("Show scrolling results ticker on TV"),
+  showBanner: zod
+    .boolean()
+    .nullish()
+    .describe("Show prop-resolved notification banner on TV"),
+  showPickReveal: zod
+    .boolean()
+    .nullish()
+    .describe("Show pick reveal overlay before result on TV"),
   createdAt: zod.coerce.date(),
 });
 
@@ -223,6 +271,14 @@ export const ListPropsResponseItem = zod.object({
   resolvedAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   order: zod.number(),
+  trueCount: zod
+    .number()
+    .nullish()
+    .describe("Number of players who picked YES\/OVER"),
+  falseCount: zod
+    .number()
+    .nullish()
+    .describe("Number of players who picked NO\/UNDER"),
 });
 export const ListPropsResponse = zod.array(ListPropsResponseItem);
 
@@ -263,6 +319,14 @@ export const UpdatePropResponse = zod.object({
   resolvedAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
   order: zod.number(),
+  trueCount: zod
+    .number()
+    .nullish()
+    .describe("Number of players who picked YES\/OVER"),
+  falseCount: zod
+    .number()
+    .nullish()
+    .describe("Number of players who picked NO\/UNDER"),
 });
 
 /**

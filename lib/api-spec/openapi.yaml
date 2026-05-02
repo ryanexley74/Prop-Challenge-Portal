@@ -488,6 +488,22 @@ components:
           type: string
           nullable: true
           description: Sound effect to play (chime, whistle, airhorn, register, broadcast)
+        showCountdown:
+          type: boolean
+          nullable: true
+          description: Show sync countdown ring on TV
+        showTicker:
+          type: boolean
+          nullable: true
+          description: Show scrolling results ticker on TV
+        showBanner:
+          type: boolean
+          nullable: true
+          description: Show prop-resolved notification banner on TV
+        showPickReveal:
+          type: boolean
+          nullable: true
+          description: Show pick reveal overlay before result on TV
         createdAt:
           type: string
           format: date-time
@@ -527,11 +543,21 @@ components:
         soundEnabled:
           type: boolean
           nullable: true
-          description: Whether sound plays on TV when a prop resolves
         soundChoice:
           type: string
           nullable: true
-          description: Sound effect to play (chime, whistle, airhorn, register, broadcast)
+        showCountdown:
+          type: boolean
+          nullable: true
+        showTicker:
+          type: boolean
+          nullable: true
+        showBanner:
+          type: boolean
+          nullable: true
+        showPickReveal:
+          type: boolean
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -619,11 +645,21 @@ components:
         soundEnabled:
           type: boolean
           nullable: true
-          description: Whether sound plays on TV when a prop resolves
         soundChoice:
           type: string
           nullable: true
-          description: Sound effect to play (chime, whistle, airhorn, register, broadcast)
+        showCountdown:
+          type: boolean
+          nullable: true
+        showTicker:
+          type: boolean
+          nullable: true
+        showBanner:
+          type: boolean
+          nullable: true
+        showPickReveal:
+          type: boolean
+          nullable: true
 
     Prop:
       type: object
@@ -652,6 +688,14 @@ components:
           format: date-time
         order:
           type: integer
+        trueCount:
+          type: integer
+          nullable: true
+          description: Number of players who picked YES/OVER
+        falseCount:
+          type: integer
+          nullable: true
+          description: Number of players who picked NO/UNDER
       required:
         - id
         - gameId
