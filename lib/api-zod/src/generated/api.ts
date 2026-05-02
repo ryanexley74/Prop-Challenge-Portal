@@ -276,6 +276,47 @@ export const GetLeaderboardResponse = zod.object({
 });
 
 /**
+ * @summary Get full shareable recap for a completed game
+ */
+export const GetGameRecapParams = zod.object({
+  gameId: zod.coerce.number(),
+});
+
+export const GetGameRecapResponse = zod.object({
+  gameId: zod.number(),
+  gameName: zod.string(),
+  status: zod.enum(["open", "active", "completed"]),
+  totalPlayers: zod.number(),
+  totalProps: zod.number(),
+  resolvedProps: zod.number(),
+  overallAccuracy: zod.number(),
+  podium: zod.array(
+    zod.object({
+      playerId: zod.number(),
+      playerName: zod.string(),
+      score: zod.number(),
+      correctAnswers: zod.number(),
+      totalResolved: zod.number(),
+      rank: zod.number(),
+    }),
+  ),
+  propStats: zod.array(
+    zod.object({
+      propId: zod.number(),
+      question: zod.string(),
+      type: zod.enum(["yes_no", "over_under"]),
+      threshold: zod.number().nullish(),
+      result: zod.boolean().nullish(),
+      totalPicks: zod.number(),
+      trueCount: zod.number(),
+      falseCount: zod.number(),
+      correctPicks: zod.number(),
+      accuracy: zod.number().nullish(),
+    }),
+  ),
+});
+
+/**
  * @summary Get game summary stats (resolved props, total players, etc.)
  */
 export const GetGameSummaryParams = zod.object({

@@ -9,6 +9,7 @@ import JoinGame from "@/pages/join-game";
 import AdminPanel from "@/pages/admin-panel";
 import TvMode from "@/pages/tv-mode";
 import PlayerResults from "@/pages/player-results";
+import GameRecap from "@/pages/game-recap";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/games/:gameId" component={GameHub} />
       <Route path="/games/:gameId/join" component={JoinGame} />
       <Route path="/games/:gameId/results" component={PlayerResults} />
+      <Route path="/games/:gameId/recap" component={GameRecap} />
       <Route path="/games/:gameId/admin" component={AdminPanel} />
       <Route path="/games/:gameId/tv" component={TvMode} />
       <Route component={NotFound} />

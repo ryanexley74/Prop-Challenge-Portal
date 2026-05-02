@@ -22,6 +22,7 @@ import type {
   CreatePropBody,
   Game,
   GameDetail,
+  GameRecap,
   GameSummary,
   HealthStatus,
   ImportPropsBody,
@@ -1379,6 +1380,93 @@ export function useGetLeaderboard<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetLeaderboardQueryOptions(gameId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get full shareable recap for a completed game
+ */
+export const getGetGameRecapUrl = (gameId: number) => {
+  return `/api/games/${gameId}/recap`;
+};
+
+export const getGameRecap = async (
+  gameId: number,
+  options?: RequestInit,
+): Promise<GameRecap> => {
+  return customFetch<GameRecap>(getGetGameRecapUrl(gameId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGameRecapQueryKey = (gameId: number) => {
+  return [`/api/games/${gameId}/recap`] as const;
+};
+
+export const getGetGameRecapQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGameRecap>>,
+  TError = ErrorType<void>,
+>(
+  gameId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGameRecap>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGameRecapQueryKey(gameId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGameRecap>>> = ({
+    signal,
+  }) => getGameRecap(gameId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!gameId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGameRecap>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGameRecapQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGameRecap>>
+>;
+export type GetGameRecapQueryError = ErrorType<void>;
+
+/**
+ * @summary Get full shareable recap for a completed game
+ */
+
+export function useGetGameRecap<
+  TData = Awaited<ReturnType<typeof getGameRecap>>,
+  TError = ErrorType<void>,
+>(
+  gameId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGameRecap>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGameRecapQueryOptions(gameId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

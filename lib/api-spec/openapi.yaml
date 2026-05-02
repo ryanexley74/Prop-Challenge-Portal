@@ -354,6 +354,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Leaderboard"
 
+  /games/{gameId}/recap:
+    get:
+      operationId: getGameRecap
+      tags: [games]
+      summary: Get full shareable recap for a completed game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Game recap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameRecap"
+        "404":
+          description: Game not found
+
   /games/{gameId}/summary:
     get:
       operationId: getGameSummary
@@ -675,6 +696,79 @@ components:
         - entries
         - resolvedPropCount
         - totalPropCount
+
+    PropStat:
+      type: object
+      properties:
+        propId:
+          type: integer
+        question:
+          type: string
+        type:
+          type: string
+          enum: [yes_no, over_under]
+        threshold:
+          type: number
+          nullable: true
+        result:
+          type: boolean
+          nullable: true
+        totalPicks:
+          type: integer
+        trueCount:
+          type: integer
+        falseCount:
+          type: integer
+        correctPicks:
+          type: integer
+        accuracy:
+          type: number
+          nullable: true
+      required:
+        - propId
+        - question
+        - type
+        - totalPicks
+        - trueCount
+        - falseCount
+        - correctPicks
+
+    GameRecap:
+      type: object
+      properties:
+        gameId:
+          type: integer
+        gameName:
+          type: string
+        status:
+          type: string
+          enum: [open, active, completed]
+        totalPlayers:
+          type: integer
+        totalProps:
+          type: integer
+        resolvedProps:
+          type: integer
+        overallAccuracy:
+          type: number
+        podium:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        propStats:
+          type: array
+          items:
+            $ref: "#/components/schemas/PropStat"
+      required:
+        - gameId
+        - gameName
+        - status
+        - totalPlayers
+        - totalProps
+        - resolvedProps
+        - overallAccuracy
+        - podium
+        - propStats
 
     GameSummary:
       type: object

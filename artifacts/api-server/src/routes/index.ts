@@ -6,6 +6,7 @@ import importPropsRouter from "./import-props";
 import playersRouter from "./players";
 import answersRouter from "./answers";
 import leaderboardRouter from "./leaderboard";
+import recapRouter from "./recap";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(importPropsRouter);
 router.use(playersRouter);
 router.use(answersRouter);
 router.use(leaderboardRouter);
+router.use(recapRouter);
 
 export default router;

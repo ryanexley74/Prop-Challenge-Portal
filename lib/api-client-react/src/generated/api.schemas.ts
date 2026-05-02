@@ -176,6 +176,47 @@ export interface Leaderboard {
   totalPropCount: number;
 }
 
+export type PropStatType = (typeof PropStatType)[keyof typeof PropStatType];
+
+export const PropStatType = {
+  yes_no: "yes_no",
+  over_under: "over_under",
+} as const;
+
+export interface PropStat {
+  propId: number;
+  question: string;
+  type: PropStatType;
+  threshold?: number | null;
+  result?: boolean | null;
+  totalPicks: number;
+  trueCount: number;
+  falseCount: number;
+  correctPicks: number;
+  accuracy?: number | null;
+}
+
+export type GameRecapStatus =
+  (typeof GameRecapStatus)[keyof typeof GameRecapStatus];
+
+export const GameRecapStatus = {
+  open: "open",
+  active: "active",
+  completed: "completed",
+} as const;
+
+export interface GameRecap {
+  gameId: number;
+  gameName: string;
+  status: GameRecapStatus;
+  totalPlayers: number;
+  totalProps: number;
+  resolvedProps: number;
+  overallAccuracy: number;
+  podium: LeaderboardEntry[];
+  propStats: PropStat[];
+}
+
 export type GameSummaryStatus =
   (typeof GameSummaryStatus)[keyof typeof GameSummaryStatus];
 
