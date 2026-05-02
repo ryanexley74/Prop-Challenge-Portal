@@ -7,6 +7,7 @@ import { Trophy, Activity, Users, ListChecks, Link2, Check } from "lucide-react"
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { InviteQrDialog } from "@/components/invite-qr-dialog";
 
 export default function GameHub() {
   const { gameId } = useParams();
@@ -81,6 +82,7 @@ export default function GameHub() {
               {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
               {copied ? "Copied!" : "Invite Link"}
             </button>
+            {game && <InviteQrDialog gameId={id} gameName={game.name} variant="glass" />}
           </div>
         </div>
       </header>

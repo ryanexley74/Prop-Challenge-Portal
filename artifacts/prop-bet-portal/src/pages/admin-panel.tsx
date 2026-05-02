@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
+import { InviteQrDialog } from "@/components/invite-qr-dialog";
 
 type PropType = "yes_no" | "over_under";
 
@@ -142,6 +143,7 @@ export default function AdminPanel() {
               {copiedInvite ? <Check className="w-4 h-4 text-green-400" /> : <Link2 className="w-4 h-4" />}
               {copiedInvite ? "Copied!" : "Invite Link"}
             </button>
+            {game && <InviteQrDialog gameId={id} gameName={game.name} variant="glass" />}
             <Link href={`/games/${id}`} className="inline-flex items-center gap-2 text-sm font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors">
               View Live Hub <ArrowRight className="w-4 h-4" />
             </Link>

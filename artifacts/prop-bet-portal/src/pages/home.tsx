@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Plus, Activity, Link2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { InviteQrDialog } from "@/components/invite-qr-dialog";
 
 function CopyInviteButton({ gameId }: { gameId: number }) {
   const [copied, setCopied] = useState(false);
@@ -130,7 +131,12 @@ export default function Home() {
                     View Game Hub
                   </Link>
                   {game.status === "open" && (
-                    <CopyInviteButton gameId={game.id} />
+                    <div className="flex gap-2 w-full">
+                      <div className="flex-1">
+                        <CopyInviteButton gameId={game.id} />
+                      </div>
+                      <InviteQrDialog gameId={game.id} gameName={game.name} variant="outline" size="sm" />
+                    </div>
                   )}
                 </CardFooter>
               </Card>
