@@ -591,6 +591,22 @@ export const GetGameSummaryResponse = zod.object({
 });
 
 /**
+ * @summary All-time player standings across all archived completed games
+ */
+export const GetAllTimeStandingsResponseItem = zod.object({
+  playerName: zod.string(),
+  gamesPlayed: zod.number(),
+  wins: zod.number(),
+  totalCorrect: zod.number(),
+  totalResolved: zod.number(),
+  avgAccuracy: zod.number().nullish(),
+  bestRank: zod.number().nullish(),
+});
+export const GetAllTimeStandingsResponse = zod.array(
+  GetAllTimeStandingsResponseItem,
+);
+
+/**
  * @summary Get a player's pick history across all games (matched by name)
  */
 export const GetPlayerHistoryQueryParams = zod.object({

@@ -331,6 +331,16 @@ export interface GameSummary {
   topScore?: number | null;
 }
 
+export interface AllTimeStandingEntry {
+  playerName: string;
+  gamesPlayed: number;
+  wins: number;
+  totalCorrect: number;
+  totalResolved: number;
+  avgAccuracy?: number | null;
+  bestRank?: number | null;
+}
+
 export type PlayerHistoryGameStatus =
   (typeof PlayerHistoryGameStatus)[keyof typeof PlayerHistoryGameStatus];
 

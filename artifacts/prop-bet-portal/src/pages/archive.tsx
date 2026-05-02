@@ -1,9 +1,42 @@
-import { useListGames, useGetGameSummary, getGetGameSummaryQueryKey } from "@workspace/api-client-react";
+import {
+  useListGames,
+  useGetGameSummary,
+  getGetGameSummaryQueryKey,
+  useGetAllTimeStandings,
+} from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { Trophy, Users, Target, ArrowLeft, Clock, ChevronRight, Archive as ArchiveIcon } from "lucide-react";
+import {
+  Trophy,
+  Users,
+  Target,
+  ArrowLeft,
+  Clock,
+  ChevronRight,
+  Archive as ArchiveIcon,
+  Medal,
+  TrendingUp,
+  History,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function ArchiveGameCard({ gameId, name, createdAt }: { gameId: number; name: string; createdAt: string }) {
+// ── Medal helpers ─────────────────────────────────────────────────────────────
+const RANK_MEDALS = ["🥇", "🥈", "🥉"];
+
+function rankLabel(rank: number) {
+  if (rank <= 3) return RANK_MEDALS[rank - 1];
+  return `#${rank}`;
+}
+
+// ── Archive game card ─────────────────────────────────────────────────────────
+function ArchiveGameCard({
+  gameId,
+  name,
+  createdAt,
+}: {
+  gameId: number;
+  name: string;
+  createdAt: string;
+}) {
   const { data: summary } = useGetGameSummary(gameId, {
     query: { queryKey: getGetGameSummaryQueryKey(gameId) },
   });
@@ -110,6 +143,177 @@ function ArchiveGameCard({ gameId, name, createdAt }: { gameId: number; name: st
   );
 }
 
+// ── All-time standings table ──────────────────────────────────────────────────
+function AllTimeStandings() {
+  const { data: standings, isLoading } = useGetAllTimeStandings();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="h-12 rounded-xl" style={{ background: "rgba(255,255,255,0.06)" }} />
+        ))}
+      </div>
+    );
+  }
+
+  if (!standings || standings.length === 0) return null;
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden mb-10"
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+    >
+      {/* Header */}
+      <div
+        className="px-5 py-4 flex items-center gap-3"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+      >
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.3)" }}
+        >
+          <Medal className="w-4 h-4 text-orange-400" />
+        </div>
+        <div>
+          <div className="text-orange-400 text-xs font-black uppercase tracking-[0.3em]">All-Time</div>
+          <h2 className="text-white font-black text-lg uppercase tracking-wide leading-tight">Season Standings</h2>
+        </div>
+        <span className="ml-auto text-slate-600 text-xs font-bold uppercase tracking-wider">
+          {standings.length} player{standings.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Column headers */}
+      <div
+        className="grid px-4 py-2.5"
+        style={{
+          gridTemplateColumns: "2rem 1fr 3.5rem 3.5rem 3.5rem 4rem",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          background: "rgba(255,255,255,0.02)",
+        }}
+      >
+        {["", "Player", "Wins", "Games", "Correct", "Accuracy"].map((h) => (
+          <div key={h} className="text-slate-600 text-xs font-black uppercase tracking-wider text-center">
+            {h}
+          </div>
+        ))}
+      </div>
+
+      {/* Rows */}
+      <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+        {standings.map((entry, idx) => {
+          const position = idx + 1;
+          const isTop3 = position <= 3;
+          const isFirst = position === 1;
+
+          return (
+            <Link
+              key={entry.playerName}
+              href={`/history/${encodeURIComponent(entry.playerName)}`}
+              className="grid items-center px-4 py-3.5 transition-colors hover:bg-white/5 cursor-pointer"
+              style={{
+                gridTemplateColumns: "2rem 1fr 3.5rem 3.5rem 3.5rem 4rem",
+                background: isFirst ? "rgba(249,115,22,0.05)" : undefined,
+              }}
+            >
+              {/* Rank */}
+              <div className="text-center">
+                {isTop3 ? (
+                  <span className="text-base leading-none">{RANK_MEDALS[position - 1]}</span>
+                ) : (
+                  <span className="text-slate-600 text-xs font-black">#{position}</span>
+                )}
+              </div>
+
+              {/* Name + win badge */}
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="font-black text-sm truncate"
+                  style={{ color: isFirst ? "#f97316" : isTop3 ? "#e2e8f0" : "#94a3b8" }}
+                >
+                  {entry.playerName}
+                </span>
+                {entry.wins > 0 && (
+                  <span
+                    className="shrink-0 text-xs font-black px-1.5 py-0.5 rounded-md"
+                    style={{
+                      background: "rgba(249,115,22,0.15)",
+                      color: "#fb923c",
+                      border: "1px solid rgba(249,115,22,0.25)",
+                    }}
+                  >
+                    🏆×{entry.wins}
+                  </span>
+                )}
+              </div>
+
+              {/* Wins */}
+              <div className="text-center">
+                <span
+                  className="font-black text-sm"
+                  style={{ color: entry.wins > 0 ? "#f97316" : "#475569" }}
+                >
+                  {entry.wins}
+                </span>
+              </div>
+
+              {/* Games played */}
+              <div className="text-center">
+                <span className="text-slate-400 font-bold text-sm">{entry.gamesPlayed}</span>
+              </div>
+
+              {/* Total correct */}
+              <div className="text-center">
+                <span className="text-slate-300 font-bold text-sm">{entry.totalCorrect}</span>
+              </div>
+
+              {/* Avg accuracy */}
+              <div className="text-center">
+                {entry.avgAccuracy !== null && entry.avgAccuracy !== undefined ? (
+                  <span
+                    className="text-xs font-black px-2 py-1 rounded-lg"
+                    style={{
+                      background:
+                        entry.avgAccuracy >= 70
+                          ? "rgba(134,239,172,0.12)"
+                          : entry.avgAccuracy >= 50
+                          ? "rgba(251,191,36,0.12)"
+                          : "rgba(248,113,113,0.12)",
+                      color:
+                        entry.avgAccuracy >= 70
+                          ? "#86efac"
+                          : entry.avgAccuracy >= 50
+                          ? "#fbbf24"
+                          : "#f87171",
+                    }}
+                  >
+                    {entry.avgAccuracy}%
+                  </span>
+                ) : (
+                  <span className="text-slate-700 text-xs font-bold">—</span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Footer note */}
+      <div
+        className="px-5 py-3 flex items-center gap-1.5"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.01)" }}
+      >
+        <TrendingUp className="w-3 h-3 text-slate-700" />
+        <span className="text-slate-700 text-xs font-bold">
+          Sorted by wins · Click any player to view their full season record
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function Archive() {
   const { data: games, isLoading } = useListGames();
 
@@ -158,6 +362,17 @@ export default function Archive() {
       </header>
 
       <div className="container mx-auto px-4 max-w-3xl py-8">
+        {/* All-time standings — shown whenever there are any archived games */}
+        {!isLoading && completedGames.length > 0 && <AllTimeStandings />}
+
+        {/* Section label */}
+        {!isLoading && completedGames.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <ArchiveIcon className="w-4 h-4 text-slate-600" />
+            <span className="text-slate-600 text-xs font-black uppercase tracking-[0.3em]">Game Results</span>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (

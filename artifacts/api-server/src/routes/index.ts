@@ -10,12 +10,14 @@ import recapRouter from "./recap";
 import sheetSyncRouter from "./sheet-sync";
 import aiStatusRouter from "./ai-status";
 import playerHistoryRouter from "./player-history";
+import allTimeStandingsRouter from "./all-time-standings";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(aiStatusRouter);
 router.use(playerHistoryRouter);
+router.use(allTimeStandingsRouter);
 router.use(gamesRouter);
 router.use(propsRouter);
 router.use(importPropsRouter);

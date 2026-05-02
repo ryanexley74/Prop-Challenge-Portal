@@ -470,6 +470,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/GameSummary"
 
+  /all-time-standings:
+    get:
+      operationId: getAllTimeStandings
+      tags: [leaderboard]
+      summary: All-time player standings across all archived completed games
+      responses:
+        "200":
+          description: All-time standings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AllTimeStandingEntry"
+
   /player-history:
     get:
       operationId: getPlayerHistory
@@ -1092,6 +1107,32 @@ components:
         - totalProps
         - resolvedProps
         - totalPlayers
+
+    AllTimeStandingEntry:
+      type: object
+      properties:
+        playerName:
+          type: string
+        gamesPlayed:
+          type: integer
+        wins:
+          type: integer
+        totalCorrect:
+          type: integer
+        totalResolved:
+          type: integer
+        avgAccuracy:
+          type: integer
+          nullable: true
+        bestRank:
+          type: integer
+          nullable: true
+      required:
+        - playerName
+        - gamesPlayed
+        - wins
+        - totalCorrect
+        - totalResolved
 
     PlayerHistoryGame:
       type: object

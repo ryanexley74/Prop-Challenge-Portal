@@ -19,6 +19,7 @@ import type {
 import type {
   AiStatus,
   AiTestResult,
+  AllTimeStandingEntry,
   Answer,
   CreateGameBody,
   CreatePropBody,
@@ -1888,6 +1889,81 @@ export function useGetGameSummary<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetGameSummaryQueryOptions(gameId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary All-time player standings across all archived completed games
+ */
+export const getGetAllTimeStandingsUrl = () => {
+  return `/api/all-time-standings`;
+};
+
+export const getAllTimeStandings = async (
+  options?: RequestInit,
+): Promise<AllTimeStandingEntry[]> => {
+  return customFetch<AllTimeStandingEntry[]>(getGetAllTimeStandingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAllTimeStandingsQueryKey = () => {
+  return [`/api/all-time-standings`] as const;
+};
+
+export const getGetAllTimeStandingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAllTimeStandings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAllTimeStandings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAllTimeStandingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAllTimeStandings>>
+  > = ({ signal }) => getAllTimeStandings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAllTimeStandings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAllTimeStandingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAllTimeStandings>>
+>;
+export type GetAllTimeStandingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary All-time player standings across all archived completed games
+ */
+
+export function useGetAllTimeStandings<
+  TData = Awaited<ReturnType<typeof getAllTimeStandings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAllTimeStandings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAllTimeStandingsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
