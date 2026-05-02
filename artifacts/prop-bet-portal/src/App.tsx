@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Archive from "@/pages/archive";
+import PlayerHistory from "@/pages/player-history";
 import GameHub from "@/pages/game-hub";
 import JoinGame from "@/pages/join-game";
 import AdminPanel from "@/pages/admin-panel";
@@ -19,6 +20,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/archive" component={Archive} />
+      <Route path="/history/:playerName" component={PlayerHistory} />
       <Route path="/games/:gameId" component={GameHub} />
       <Route path="/games/:gameId/join" component={JoinGame} />
       <Route path="/games/:gameId/results" component={PlayerResults} />

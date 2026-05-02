@@ -470,6 +470,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/GameSummary"
 
+  /player-history:
+    get:
+      operationId: getPlayerHistory
+      tags: [players]
+      summary: Get a player's pick history across all games (matched by name)
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerHistory"
+        "400":
+          description: Missing name
+
 components:
   schemas:
     HealthStatus:
@@ -1071,3 +1092,77 @@ components:
         - totalProps
         - resolvedProps
         - totalPlayers
+
+    PlayerHistoryGame:
+      type: object
+      properties:
+        gameId:
+          type: integer
+        gameName:
+          type: string
+        status:
+          type: string
+          enum: [open, active, completed]
+        createdAt:
+          type: string
+          format: date-time
+        score:
+          type: integer
+        correctAnswers:
+          type: integer
+        totalResolved:
+          type: integer
+        totalAnswered:
+          type: integer
+        accuracy:
+          type: integer
+          nullable: true
+        rank:
+          type: integer
+          nullable: true
+        totalPlayers:
+          type: integer
+        isChampion:
+          type: boolean
+      required:
+        - gameId
+        - gameName
+        - status
+        - createdAt
+        - score
+        - correctAnswers
+        - totalResolved
+        - totalAnswered
+        - totalPlayers
+        - isChampion
+
+    PlayerHistory:
+      type: object
+      properties:
+        playerName:
+          type: string
+        totalGames:
+          type: integer
+        overallCorrect:
+          type: integer
+        overallResolved:
+          type: integer
+        overallAccuracy:
+          type: integer
+        bestRank:
+          type: integer
+          nullable: true
+        championCount:
+          type: integer
+        games:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlayerHistoryGame"
+      required:
+        - playerName
+        - totalGames
+        - overallCorrect
+        - overallResolved
+        - overallAccuracy
+        - championCount
+        - games

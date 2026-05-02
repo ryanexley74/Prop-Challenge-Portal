@@ -26,12 +26,14 @@ import type {
   GameDetail,
   GameRecap,
   GameSummary,
+  GetPlayerHistoryParams,
   HealthStatus,
   ImportPropsBody,
   ImportPropsResult,
   JoinGameBody,
   Leaderboard,
   Player,
+  PlayerHistory,
   Prop,
   SheetSyncResult,
   SubmitAnswersBody,
@@ -1886,6 +1888,103 @@ export function useGetGameSummary<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetGameSummaryQueryOptions(gameId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a player's pick history across all games (matched by name)
+ */
+export const getGetPlayerHistoryUrl = (params: GetPlayerHistoryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/player-history?${stringifiedParams}`
+    : `/api/player-history`;
+};
+
+export const getPlayerHistory = async (
+  params: GetPlayerHistoryParams,
+  options?: RequestInit,
+): Promise<PlayerHistory> => {
+  return customFetch<PlayerHistory>(getGetPlayerHistoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPlayerHistoryQueryKey = (
+  params?: GetPlayerHistoryParams,
+) => {
+  return [`/api/player-history`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetPlayerHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPlayerHistory>>,
+  TError = ErrorType<void>,
+>(
+  params: GetPlayerHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPlayerHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPlayerHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPlayerHistory>>
+  > = ({ signal }) => getPlayerHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPlayerHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPlayerHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPlayerHistory>>
+>;
+export type GetPlayerHistoryQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a player's pick history across all games (matched by name)
+ */
+
+export function useGetPlayerHistory<
+  TData = Awaited<ReturnType<typeof getPlayerHistory>>,
+  TError = ErrorType<void>,
+>(
+  params: GetPlayerHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPlayerHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPlayerHistoryQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -8,7 +8,7 @@ import {
   getGetLeaderboardQueryKey,
   getGetPlayerAnswersQueryKey,
 } from "@workspace/api-client-react";
-import { Trophy, CheckCircle2, XCircle, Clock, ArrowLeft, Medal, Bell, BellOff } from "lucide-react";
+import { Trophy, CheckCircle2, XCircle, Clock, ArrowLeft, Medal, Bell, BellOff, History } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNotificationPermission, usePropNotifications } from "@/hooks/use-prop-notifications";
 
@@ -140,6 +140,20 @@ export default function PlayerResults() {
               <ArrowLeft className="w-4 h-4" /> Game Hub
             </Link>
 
+            <div className="flex items-center gap-2">
+              {playerName && playerName !== "You" && (
+                <Link
+                  href={`/history/${encodeURIComponent(playerName)}`}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-black uppercase tracking-wider transition-colors"
+                  style={{
+                    background: "rgba(249,115,22,0.15)",
+                    color: "#fb923c",
+                    border: "1px solid rgba(249,115,22,0.3)",
+                  }}
+                >
+                  <History className="w-3.5 h-3.5" /> Season Record
+                </Link>
+              )}
             {notifPermission !== "unsupported" && (
               <button
                 onClick={notifPermission === "default" ? requestNotifPermission : undefined}
@@ -166,6 +180,7 @@ export default function PlayerResults() {
                 {notifPermission === "granted" ? "Notifying" : notifPermission === "denied" ? "Blocked" : "Notify Me"}
               </button>
             )}
+            </div>
           </div>
 
           <div className="flex items-start justify-between gap-4">
@@ -405,14 +420,23 @@ export default function PlayerResults() {
           </div>
         )}
 
-        {/* Back link */}
-        <div className="pt-4 text-center">
+        {/* Back link + season record */}
+        <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href={`/games/${id}`}
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-bold text-sm transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Game Hub
           </Link>
+          {playerName && playerName !== "You" && (
+            <Link
+              href={`/history/${encodeURIComponent(playerName)}`}
+              className="inline-flex items-center gap-2 font-bold text-sm transition-colors"
+              style={{ color: "#f97316" }}
+            >
+              <History className="w-4 h-4" /> My Season Record →
+            </Link>
+          )}
         </div>
       </div>
     </div>

@@ -589,3 +589,36 @@ export const GetGameSummaryResponse = zod.object({
   topPlayer: zod.string().nullish(),
   topScore: zod.number().nullish(),
 });
+
+/**
+ * @summary Get a player's pick history across all games (matched by name)
+ */
+export const GetPlayerHistoryQueryParams = zod.object({
+  name: zod.coerce.string(),
+});
+
+export const GetPlayerHistoryResponse = zod.object({
+  playerName: zod.string(),
+  totalGames: zod.number(),
+  overallCorrect: zod.number(),
+  overallResolved: zod.number(),
+  overallAccuracy: zod.number(),
+  bestRank: zod.number().nullish(),
+  championCount: zod.number(),
+  games: zod.array(
+    zod.object({
+      gameId: zod.number(),
+      gameName: zod.string(),
+      status: zod.enum(["open", "active", "completed"]),
+      createdAt: zod.coerce.date(),
+      score: zod.number(),
+      correctAnswers: zod.number(),
+      totalResolved: zod.number(),
+      totalAnswered: zod.number(),
+      accuracy: zod.number().nullish(),
+      rank: zod.number().nullish(),
+      totalPlayers: zod.number(),
+      isChampion: zod.boolean(),
+    }),
+  ),
+});

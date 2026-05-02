@@ -330,3 +330,42 @@ export interface GameSummary {
   topPlayer?: string | null;
   topScore?: number | null;
 }
+
+export type PlayerHistoryGameStatus =
+  (typeof PlayerHistoryGameStatus)[keyof typeof PlayerHistoryGameStatus];
+
+export const PlayerHistoryGameStatus = {
+  open: "open",
+  active: "active",
+  completed: "completed",
+} as const;
+
+export interface PlayerHistoryGame {
+  gameId: number;
+  gameName: string;
+  status: PlayerHistoryGameStatus;
+  createdAt: string;
+  score: number;
+  correctAnswers: number;
+  totalResolved: number;
+  totalAnswered: number;
+  accuracy?: number | null;
+  rank?: number | null;
+  totalPlayers: number;
+  isChampion: boolean;
+}
+
+export interface PlayerHistory {
+  playerName: string;
+  totalGames: number;
+  overallCorrect: number;
+  overallResolved: number;
+  overallAccuracy: number;
+  bestRank?: number | null;
+  championCount: number;
+  games: PlayerHistoryGame[];
+}
+
+export type GetPlayerHistoryParams = {
+  name: string;
+};
