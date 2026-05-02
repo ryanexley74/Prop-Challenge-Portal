@@ -133,6 +133,7 @@ router.patch("/games/:gameId", async (req, res) => {
     if (body.showTicker !== undefined) updates.showTicker = body.showTicker;
     if (body.showBanner !== undefined) updates.showBanner = body.showBanner;
     if (body.showPickReveal !== undefined) updates.showPickReveal = body.showPickReveal;
+    if (body.showTally !== undefined) updates.showTally = body.showTally;
 
     const [game] = await db.update(gamesTable)
       .set(updates)

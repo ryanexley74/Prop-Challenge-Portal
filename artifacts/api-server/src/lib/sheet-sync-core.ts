@@ -10,6 +10,10 @@ const AiResponseSchema = z.object({
     result: z.boolean(),
     confidence: z.enum(["high", "medium", "low"]),
   })),
+  tallies: z.array(z.object({
+    propId: z.number(),
+    tally: z.string(),
+  })).optional(),
 });
 
 export function extractSheetId(url: string): string | null {
@@ -21,6 +25,7 @@ export type SyncOutcome = {
   resolved: { propId: number; question: string; result: boolean }[];
   unmatched: string[];
   alreadyResolved: number;
+  talliesUpdated: number;
   sheetUrl: string;
   error?: string;
 };
@@ -28,7 +33,7 @@ export type SyncOutcome = {
 export async function syncGameFromSheet(gameId: number, sheetUrl: string): Promise<SyncOutcome> {
   const sheetId = extractSheetId(sheetUrl);
   if (!sheetId) {
-    return { resolved: [], unmatched: [], alreadyResolved: 0, sheetUrl, error: "Could not extract spreadsheet ID from URL" };
+    return { resolved: [], unmatched: [], alreadyResolved: 0, talliesUpdated: 0, sheetUrl, error: "Could not extract spreadsheet ID from URL" };
   }
 
   const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
@@ -41,25 +46,25 @@ export async function syncGameFromSheet(gameId: number, sheetUrl: string): Promi
     });
     if (!fetchRes.ok) {
       return {
-        resolved: [], unmatched: [], alreadyResolved: 0, sheetUrl,
+        resolved: [], unmatched: [], alreadyResolved: 0, talliesUpdated: 0, sheetUrl,
         error: `Could not fetch the sheet (HTTP ${fetchRes.status}). Make sure it is shared as "Anyone with the link can view".`,
       };
     }
     csvText = await fetchRes.text();
   } catch {
-    return { resolved: [], unmatched: [], alreadyResolved: 0, sheetUrl, error: "Could not reach the Google Sheet." };
+    return { resolved: [], unmatched: [], alreadyResolved: 0, talliesUpdated: 0, sheetUrl, error: "Could not reach the Google Sheet." };
   }
 
   const props = await db.select().from(propsTable).where(eq(propsTable.gameId, gameId));
   if (props.length === 0) {
-    return { resolved: [], unmatched: [], alreadyResolved: 0, sheetUrl };
+    return { resolved: [], unmatched: [], alreadyResolved: 0, talliesUpdated: 0, sheetUrl };
   }
 
   const unresolvedProps = props.filter(p => p.result === null || p.result === undefined);
   const alreadyResolved = props.length - unresolvedProps.length;
 
   if (unresolvedProps.length === 0) {
-    return { resolved: [], unmatched: [], alreadyResolved, sheetUrl };
+    return { resolved: [], unmatched: [], alreadyResolved, talliesUpdated: 0, sheetUrl };
   }
 
   const propsJson = unresolvedProps.map(p => ({
@@ -87,17 +92,24 @@ For each prop, scan the CSV for the answer. The sheet may show scores, stats, or
 - For "over_under" props: result is true (OVER) if the stat exceeds the threshold, false (UNDER) if not
 
 Rules:
-- Only resolve props where you find clear, unambiguous data in the CSV
-- Skip any prop where the data is missing, unclear, or the game situation hasn't resolved it yet
+- Only resolve props where you find clear, unambiguous FINAL data
+- Skip any prop where the game situation is still in progress or uncertain
 - confidence: "high" = exact match found, "medium" = strong inference, "low" = uncertain
 
-Respond ONLY with valid JSON:
-{"resolutions": [{"propId": <number>, "result": <boolean>, "confidence": "high"|"medium"|"low"}]}
+For UNRESOLVED over/under props still in progress, also extract the current running tally
+(e.g. if the prop is "over/under 275.5 passing yards" and the sheet shows 142 so far, return tally "142").
+Only include a tally if you find a clear numeric value for that stat. Keep tally values concise (e.g. "142", "3 TDs", "26 pts").
 
-If nothing can be resolved yet, return {"resolutions": []}`;
+Respond ONLY with valid JSON matching this exact format:
+{
+  "resolutions": [{"propId": <number>, "result": <boolean>, "confidence": "high"|"medium"|"low"}],
+  "tallies": [{"propId": <number>, "tally": "<current value string>"}]
+}
+
+If nothing can be resolved yet, return {"resolutions": [], "tallies": []}`;
 
   const completion = await client.chat.completions.create({
-    model: "gpt-5-mini",
+    model: "gpt-4o-mini",
     messages: [{ role: "system", content: systemPrompt }],
     response_format: { type: "json_object" },
   });
@@ -108,7 +120,7 @@ If nothing can be resolved yet, return {"resolutions": []}`;
   try {
     parsed = AiResponseSchema.parse(JSON.parse(raw));
   } catch {
-    return { resolved: [], unmatched: [], alreadyResolved, sheetUrl, error: "AI returned an unexpected format." };
+    return { resolved: [], unmatched: [], alreadyResolved, talliesUpdated: 0, sheetUrl, error: "AI returned an unexpected format." };
   }
 
   const toApply = parsed.resolutions.filter(r => r.confidence !== "low");
@@ -126,6 +138,16 @@ If nothing can be resolved yet, return {"resolutions": []}`;
     )
   );
 
+  // Apply tallies for still-unresolved props
+  const talliesToApply = (parsed.tallies ?? []).filter(t => !appliedPropIds.has(t.propId));
+  await Promise.all(
+    talliesToApply.map(({ propId, tally }) =>
+      db.update(propsTable)
+        .set({ tally })
+        .where(eq(propsTable.id, propId))
+    )
+  );
+
   // Update lastSheetSync on the game
   await db.update(gamesTable)
     .set({ lastSheetSync: new Date() })
@@ -136,12 +158,13 @@ If nothing can be resolved yet, return {"resolutions": []}`;
     return { propId: r.propId, question: prop?.question ?? "", result: r.result };
   });
 
-  logger.info({ gameId, resolved: resolvedSummary.length, unmatched: unmatchedQuestions.length }, "Sheet sync complete");
+  logger.info({ gameId, resolved: resolvedSummary.length, tallies: talliesToApply.length, unmatched: unmatchedQuestions.length }, "Sheet sync complete");
 
   return {
     resolved: resolvedSummary,
     unmatched: unmatchedQuestions,
     alreadyResolved,
+    talliesUpdated: talliesToApply.length,
     sheetUrl,
   };
 }

@@ -13,6 +13,7 @@ export const propsTable = pgTable("props", {
   threshold: real("threshold"),
   result: boolean("result"),
   resolvedAt: timestamp("resolved_at"),
+  tally: text("tally"),
   order: integer("order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

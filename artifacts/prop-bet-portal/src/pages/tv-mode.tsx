@@ -500,6 +500,52 @@ function CelebrationOverlay({ entries, onDismiss }: CelebrationProps) {
   );
 }
 
+// ─── Live tally strip ─────────────────────────────────────────────────────
+
+function LiveTallyStrip({ props }: { props: { id: number; question: string; type: string; threshold?: number | null; tally?: string | null; result?: boolean | null }[] }) {
+  const pending = props.filter(p => (p.result === null || p.result === undefined) && p.tally);
+  if (pending.length === 0) return null;
+
+  return (
+    <div
+      className="shrink-0 px-8 pb-3"
+      style={{ display: "flex", flexDirection: "column", gap: 6 }}
+    >
+      <div style={{ color: "#f97316", fontSize: "0.55rem", fontWeight: 900, letterSpacing: "0.45em", textTransform: "uppercase", marginBottom: 2 }}>
+        📊 Live Progress
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {pending.map((p) => {
+          const thresholdLabel = p.type === "over_under" && p.threshold != null ? ` ${p.threshold}` : "";
+          const shortQuestion = p.question.length > 52 ? p.question.slice(0, 52) + "…" : p.question;
+          return (
+            <div
+              key={p.id}
+              style={{
+                background: "rgba(249,115,22,0.08)",
+                border: "1px solid rgba(249,115,22,0.25)",
+                borderRadius: 8,
+                padding: "5px 12px",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                maxWidth: 420,
+              }}
+            >
+              <span style={{ color: "#94a3b8", fontSize: "0.75rem", fontWeight: 600, flexShrink: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {shortQuestion}{thresholdLabel}
+              </span>
+              <span style={{ color: "#f97316", fontSize: "0.85rem", fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap" }}>
+                {p.tally}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main TV Mode page ─────────────────────────────────────────────────────
 
 export default function TvMode() {
@@ -509,7 +555,8 @@ export default function TvMode() {
   const [notifQueue, setNotifQueue] = useState<ResolvedNotif[]>([]);
   const [revealQueue, setRevealQueue] = useState<ResolvedNotif[]>([]);
   const prevStatusRef = useRef<string | null>(null);
-  const seenResolvedIdsRef = useRef<Set<number>>(new Set());
+  // Track propId → last seen result so corrections re-trigger the sequence
+  const seenResolvedIdsRef = useRef<Map<number, boolean>>(new Map());
   const initialLoadDoneRef = useRef(false);
 
   const { data: game } = useGetGame(id, {
@@ -539,14 +586,18 @@ export default function TvMode() {
       (p) => p.result !== null && p.result !== undefined
     );
     if (!initialLoadDoneRef.current) {
-      // Seed seen set on first load — don't fire banners for already-resolved props
-      resolved.forEach((p) => seenResolvedIdsRef.current.add(p.id));
+      // Seed map on first load — don't fire notifications for already-resolved props
+      resolved.forEach((p) => seenResolvedIdsRef.current.set(p.id, p.result as boolean));
       initialLoadDoneRef.current = true;
       return;
     }
-    const fresh = resolved.filter((p) => !seenResolvedIdsRef.current.has(p.id));
+    // Detect newly resolved AND result-changed props (corrections, manual updates)
+    const fresh = resolved.filter((p) => {
+      const seen = seenResolvedIdsRef.current.get(p.id);
+      return seen === undefined || seen !== (p.result as boolean);
+    });
     if (fresh.length === 0) return;
-    fresh.forEach((p) => seenResolvedIdsRef.current.add(p.id));
+    fresh.forEach((p) => seenResolvedIdsRef.current.set(p.id, p.result as boolean));
 
     // Play sound immediately when prop resolves
     if (gameRef.current?.soundEnabled ?? true) {
@@ -716,9 +767,14 @@ export default function TvMode() {
 
       {/* Orange divider */}
       <div
-        className="h-0.5 mx-8 shrink-0 mb-4"
+        className="h-0.5 mx-8 shrink-0 mb-3"
         style={{ background: "linear-gradient(to right, #f97316, #fb923c80, transparent)" }}
       />
+
+      {/* Live tally strip — in-progress prop counts from sheet */}
+      {(game?.showTally ?? true) && game?.props && (
+        <LiveTallyStrip props={game.props} />
+      )}
 
       {/* Main content */}
       {entries.length === 0 ? (

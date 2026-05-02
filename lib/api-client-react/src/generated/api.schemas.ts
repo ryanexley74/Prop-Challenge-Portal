@@ -39,6 +39,8 @@ export interface Game {
   showBanner?: boolean | null;
   /** Show pick reveal overlay before result on TV */
   showPickReveal?: boolean | null;
+  /** Show live tally strip for in-progress props on TV */
+  showTally?: boolean | null;
   createdAt: string;
 }
 
@@ -72,6 +74,8 @@ export interface Prop {
   trueCount?: number | null;
   /** Number of players who picked NO/UNDER */
   falseCount?: number | null;
+  /** Live running value from sheet (e.g. "142 yds", "26 pts") */
+  tally?: string | null;
 }
 
 export interface GameDetail {
@@ -90,6 +94,7 @@ export interface GameDetail {
   showTicker?: boolean | null;
   showBanner?: boolean | null;
   showPickReveal?: boolean | null;
+  showTally?: boolean | null;
   createdAt: string;
   props: Prop[];
   playerCount: number;
@@ -139,6 +144,7 @@ export interface UpdateGameBody {
   showTicker?: boolean | null;
   showBanner?: boolean | null;
   showPickReveal?: boolean | null;
+  showTally?: boolean | null;
 }
 
 export type CreatePropBodyType =

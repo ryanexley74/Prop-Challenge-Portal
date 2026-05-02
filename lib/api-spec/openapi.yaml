@@ -504,6 +504,10 @@ components:
           type: boolean
           nullable: true
           description: Show pick reveal overlay before result on TV
+        showTally:
+          type: boolean
+          nullable: true
+          description: Show live tally strip for in-progress props on TV
         createdAt:
           type: string
           format: date-time
@@ -556,6 +560,9 @@ components:
           type: boolean
           nullable: true
         showPickReveal:
+          type: boolean
+          nullable: true
+        showTally:
           type: boolean
           nullable: true
         createdAt:
@@ -660,6 +667,9 @@ components:
         showPickReveal:
           type: boolean
           nullable: true
+        showTally:
+          type: boolean
+          nullable: true
 
     Prop:
       type: object
@@ -696,6 +706,10 @@ components:
           type: integer
           nullable: true
           description: Number of players who picked NO/UNDER
+        tally:
+          type: string
+          nullable: true
+          description: Live running value from sheet (e.g. "142 yds", "26 pts")
       required:
         - id
         - gameId

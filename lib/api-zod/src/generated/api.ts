@@ -55,6 +55,10 @@ export const ListGamesResponseItem = zod.object({
     .boolean()
     .nullish()
     .describe("Show pick reveal overlay before result on TV"),
+  showTally: zod
+    .boolean()
+    .nullish()
+    .describe("Show live tally strip for in-progress props on TV"),
   createdAt: zod.coerce.date(),
 });
 export const ListGamesResponse = zod.array(ListGamesResponseItem);
@@ -112,6 +116,10 @@ export const FindGameByCodeResponse = zod.object({
     .boolean()
     .nullish()
     .describe("Show pick reveal overlay before result on TV"),
+  showTally: zod
+    .boolean()
+    .nullish()
+    .describe("Show live tally strip for in-progress props on TV"),
   createdAt: zod.coerce.date(),
 });
 
@@ -164,6 +172,7 @@ export const GetGameResponse = zod.object({
   showTicker: zod.boolean().nullish(),
   showBanner: zod.boolean().nullish(),
   showPickReveal: zod.boolean().nullish(),
+  showTally: zod.boolean().nullish(),
   createdAt: zod.coerce.date(),
   props: zod.array(
     zod.object({
@@ -184,6 +193,12 @@ export const GetGameResponse = zod.object({
         .number()
         .nullish()
         .describe("Number of players who picked NO\/UNDER"),
+      tally: zod
+        .string()
+        .nullish()
+        .describe(
+          'Live running value from sheet (e.g. \"142 yds\", \"26 pts\")',
+        ),
     }),
   ),
   playerCount: zod.number(),
@@ -211,6 +226,7 @@ export const UpdateGameBody = zod.object({
   showTicker: zod.boolean().nullish(),
   showBanner: zod.boolean().nullish(),
   showPickReveal: zod.boolean().nullish(),
+  showTally: zod.boolean().nullish(),
 });
 
 export const UpdateGameResponse = zod.object({
@@ -251,6 +267,10 @@ export const UpdateGameResponse = zod.object({
     .boolean()
     .nullish()
     .describe("Show pick reveal overlay before result on TV"),
+  showTally: zod
+    .boolean()
+    .nullish()
+    .describe("Show live tally strip for in-progress props on TV"),
   createdAt: zod.coerce.date(),
 });
 
@@ -279,6 +299,10 @@ export const ListPropsResponseItem = zod.object({
     .number()
     .nullish()
     .describe("Number of players who picked NO\/UNDER"),
+  tally: zod
+    .string()
+    .nullish()
+    .describe('Live running value from sheet (e.g. \"142 yds\", \"26 pts\")'),
 });
 export const ListPropsResponse = zod.array(ListPropsResponseItem);
 
@@ -327,6 +351,10 @@ export const UpdatePropResponse = zod.object({
     .number()
     .nullish()
     .describe("Number of players who picked NO\/UNDER"),
+  tally: zod
+    .string()
+    .nullish()
+    .describe('Live running value from sheet (e.g. \"142 yds\", \"26 pts\")'),
 });
 
 /**

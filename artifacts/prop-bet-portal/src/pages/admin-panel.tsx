@@ -163,7 +163,7 @@ export default function AdminPanel() {
     );
   };
 
-  const handleTvToggle = (field: "showBanner" | "showPickReveal" | "showCountdown" | "showTicker", value: boolean) => {
+  const handleTvToggle = (field: "showBanner" | "showPickReveal" | "showCountdown" | "showTicker" | "showTally", value: boolean) => {
     updateGame.mutate(
       { gameId: id, data: { [field]: value } },
       {
@@ -541,6 +541,19 @@ export default function AdminPanel() {
                 checked={game.showTicker ?? true}
                 disabled={updateGame.isPending}
                 onCheckedChange={(v) => handleTvToggle("showTicker", v)}
+              />
+            </div>
+
+            {/* Live Tally Strip */}
+            <div className="flex items-center justify-between py-4">
+              <div>
+                <div className="font-bold text-sm">📊 Live Tally Strip</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Show running counts for in-progress props (synced from sheet)</div>
+              </div>
+              <Switch
+                checked={game.showTally ?? true}
+                disabled={updateGame.isPending}
+                onCheckedChange={(v) => handleTvToggle("showTally", v)}
               />
             </div>
 
