@@ -331,6 +331,12 @@ export const UpdatePropBody = zod.object({
   result: zod.boolean().nullish(),
   question: zod.string().optional(),
   order: zod.number().optional(),
+  tally: zod
+    .string()
+    .nullish()
+    .describe(
+      'Live running value (e.g. \"142 yds\", \"26 pts\"). Set to null to clear.',
+    ),
 });
 
 export const UpdatePropResponse = zod.object({

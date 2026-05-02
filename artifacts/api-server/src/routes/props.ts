@@ -73,6 +73,7 @@ router.patch("/props/:propId", async (req, res) => {
     }
     if (body.question !== undefined) updates.question = body.question;
     if (body.order !== undefined) updates.order = body.order;
+    if (body.tally !== undefined) updates.tally = body.tally;
 
     const [prop] = await db.update(propsTable)
       .set(updates)

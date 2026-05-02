@@ -190,6 +190,8 @@ export interface UpdatePropBody {
   result?: boolean | null;
   question?: string;
   order?: number;
+  /** Live running value (e.g. "142 yds", "26 pts"). Set to null to clear. */
+  tally?: string | null;
 }
 
 export interface Player {

@@ -781,6 +781,10 @@ components:
           type: string
         order:
           type: integer
+        tally:
+          type: string
+          nullable: true
+          description: Live running value (e.g. "142 yds", "26 pts"). Set to null to clear.
 
     Player:
       type: object

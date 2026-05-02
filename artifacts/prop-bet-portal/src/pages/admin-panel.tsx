@@ -25,6 +25,59 @@ import { ImportPropsDialog } from "@/components/import-props-dialog";
 
 type PropType = "yes_no" | "over_under";
 
+function TallyInput({
+  propId,
+  currentTally,
+  onSave,
+  disabled,
+}: {
+  propId: number;
+  currentTally: string | null | undefined;
+  onSave: (propId: number, tally: string | null) => void;
+  disabled?: boolean;
+}) {
+  const [draft, setDraft] = useState(currentTally ?? "");
+
+  useEffect(() => {
+    setDraft(currentTally ?? "");
+  }, [currentTally]);
+
+  const save = () => {
+    const trimmed = draft.trim();
+    const current = currentTally ?? "";
+    if (trimmed === current) return;
+    onSave(propId, trimmed || null);
+  };
+
+  return (
+    <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-dashed border-border/60">
+      <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground shrink-0">
+        📊 Live Tally
+      </span>
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+        disabled={disabled}
+        placeholder="e.g. 142, 3 TDs, 26 pts"
+        className="h-6 flex-1 text-xs px-2 rounded border border-border bg-background font-mono focus:outline-none focus:ring-1 focus:ring-orange-400 placeholder:text-muted-foreground/40"
+      />
+      {currentTally && (
+        <button
+          onClick={() => { setDraft(""); onSave(propId, null); }}
+          disabled={disabled}
+          className="text-muted-foreground hover:text-destructive text-sm font-bold leading-none px-0.5 shrink-0"
+          title="Clear tally"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPanel() {
   const { gameId } = useParams();
   const id = Number(gameId);
@@ -182,6 +235,18 @@ export default function AdminPanel() {
           queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
           playPropSound(value);
           toast.success(`Sound changed — preview playing`);
+        },
+      }
+    );
+  };
+
+  const handleSaveTally = (propId: number, tally: string | null) => {
+    updateProp.mutate(
+      { propId, data: { tally } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPropsQueryKey(id) });
+          toast.success(tally ? `Tally updated to "${tally}"` : "Tally cleared");
         },
       }
     );
@@ -627,13 +692,21 @@ export default function AdminPanel() {
               <div className="flex flex-col md:flex-row md:items-center">
                 <div className="p-4 flex-1">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Prop {idx + 1}</div>
                       <div className="font-bold text-lg">{prop.question}</div>
                       {prop.threshold && (
                         <div className="inline-block mt-2 px-2 py-1 bg-muted rounded text-sm font-bold font-mono">
                           Line: {prop.threshold}
                         </div>
+                      )}
+                      {prop.result === null && (
+                        <TallyInput
+                          propId={prop.id}
+                          currentTally={prop.tally}
+                          onSave={handleSaveTally}
+                          disabled={updateProp.isPending}
+                        />
                       )}
                     </div>
                   </div>
