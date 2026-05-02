@@ -17,6 +17,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AiStatus,
+  AiTestResult,
   Answer,
   CreateGameBody,
   CreatePropBody,
@@ -121,6 +123,160 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Returns current AI provider configuration (no network call)
+ */
+export const getGetAiStatusUrl = () => {
+  return `/api/ai-status`;
+};
+
+export const getAiStatus = async (options?: RequestInit): Promise<AiStatus> => {
+  return customFetch<AiStatus>(getGetAiStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAiStatusQueryKey = () => {
+  return [`/api/ai-status`] as const;
+};
+
+export const getGetAiStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAiStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAiStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAiStatusQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAiStatus>>> = ({
+    signal,
+  }) => getAiStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAiStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAiStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAiStatus>>
+>;
+export type GetAiStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Returns current AI provider configuration (no network call)
+ */
+
+export function useGetAiStatus<
+  TData = Awaited<ReturnType<typeof getAiStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAiStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAiStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Makes a minimal live call to verify AI connectivity
+ */
+export const getTestAiConnectionUrl = () => {
+  return `/api/ai-status/test`;
+};
+
+export const testAiConnection = async (
+  options?: RequestInit,
+): Promise<AiTestResult> => {
+  return customFetch<AiTestResult>(getTestAiConnectionUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getTestAiConnectionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof testAiConnection>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof testAiConnection>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["testAiConnection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof testAiConnection>>,
+    void
+  > = () => {
+    return testAiConnection(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TestAiConnectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof testAiConnection>>
+>;
+
+export type TestAiConnectionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Makes a minimal live call to verify AI connectivity
+ */
+export const useTestAiConnection = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof testAiConnection>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof testAiConnection>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getTestAiConnectionMutationOptions(options));
+};
 
 /**
  * @summary List all games

@@ -9,6 +9,30 @@ export interface HealthStatus {
   status: string;
 }
 
+export type AiStatusProvider =
+  (typeof AiStatusProvider)[keyof typeof AiStatusProvider];
+
+export const AiStatusProvider = {
+  openai: "openai",
+  gemini: "gemini",
+  groq: "groq",
+  custom: "custom",
+  unconfigured: "unconfigured",
+} as const;
+
+export interface AiStatus {
+  configured: boolean;
+  provider: AiStatusProvider;
+  model: string;
+  baseUrlHost?: string | null;
+}
+
+export interface AiTestResult {
+  ok: boolean;
+  latencyMs: number;
+  error?: string | null;
+}
+
 export type GameStatus = (typeof GameStatus)[keyof typeof GameStatus];
 
 export const GameStatus = {

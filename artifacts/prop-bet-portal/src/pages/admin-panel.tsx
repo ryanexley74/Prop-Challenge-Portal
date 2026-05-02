@@ -5,9 +5,9 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from "@dnd-kit/utilities";
 import { 
   useGetGame, useListProps, useCreateProp, useUpdateProp, useDeleteProp, useUpdateGame,
-  useSyncFromSheet,
+  useSyncFromSheet, useGetAiStatus, useTestAiConnection,
   getGetGameQueryKey, getListPropsQueryKey,
-  type Prop,
+  type Prop, type AiTestResult,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle, Volume2, VolumeX, GripVertical } from "lucide-react";
+import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check, Tv2, FileText, Sheet, RefreshCw, CheckCircle2, XCircle, Volume2, VolumeX, GripVertical, Bot } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { SyncCountdownRing } from "@/components/sync-countdown-ring";
 import { SOUND_OPTIONS, playPropSound, type SoundChoice } from "@/lib/prop-sounds";
@@ -28,6 +28,15 @@ import { InviteQrDialog } from "@/components/invite-qr-dialog";
 import { ImportPropsDialog } from "@/components/import-props-dialog";
 
 type PropType = "yes_no" | "over_under";
+
+const PROVIDER_LABELS: Record<string, string> = {
+  openai:       "OpenAI",
+  gemini:       "Google Gemini",
+  groq:         "Groq",
+  custom:       "Custom",
+  unconfigured: "Not set",
+};
+const providerLabel = (p: string) => PROVIDER_LABELS[p] ?? p;
 
 function TallyInput({
   propId,
@@ -228,8 +237,11 @@ export default function AdminPanel() {
   const deleteProp = useDeleteProp();
   const updateGame = useUpdateGame();
   const syncFromSheet = useSyncFromSheet();
+  const { data: aiStatus } = useGetAiStatus();
+  const testAiConn = useTestAiConnection();
 
   const [propOpen, setPropOpen] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<AiTestResult | null>(null);
   const [question, setQuestion] = useState("");
   const [type, setType] = useState<PropType>("yes_no");
   const [threshold, setThreshold] = useState("");
@@ -648,6 +660,91 @@ export default function AdminPanel() {
                   </div>
                 )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* AI Sync Status */}
+        <Card className="mb-8 border-2 border-blue-500/30">
+          <CardHeader className="bg-blue-500/5 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bot className="w-5 h-5 text-blue-600" />
+                <CardTitle className="text-lg font-black uppercase">AI Sync Status</CardTitle>
+              </div>
+              {aiStatus && (
+                <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-full ${
+                  aiStatus.configured
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-600"
+                }`}>
+                  {aiStatus.configured ? "✓ Configured" : "✗ Not configured"}
+                </span>
+              )}
+            </div>
+            <CardDescription>
+              The AI model that reads your Google Sheet and determines prop results.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            {aiStatus ? (
+              <>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                  <div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground mb-0.5">Provider</div>
+                    <div className="font-bold">{providerLabel(aiStatus.provider)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold uppercase text-muted-foreground mb-0.5">Model</div>
+                    <div className="font-mono font-bold text-sm">{aiStatus.model}</div>
+                  </div>
+                  {aiStatus.baseUrlHost && (
+                    <div className="col-span-2">
+                      <div className="text-xs font-bold uppercase text-muted-foreground mb-0.5">Endpoint</div>
+                      <div className="font-mono text-xs text-muted-foreground">{aiStatus.baseUrlHost}</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 pt-3 border-t">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="font-bold uppercase"
+                    disabled={testAiConn.isPending || !aiStatus.configured}
+                    onClick={() =>
+                      testAiConn.mutate(undefined, {
+                        onSuccess: (r) => setAiTestResult(r),
+                        onError: () =>
+                          setAiTestResult({ ok: false, latencyMs: 0, error: "Request failed" }),
+                      })
+                    }
+                  >
+                    {testAiConn.isPending ? "Testing…" : "Test Connection"}
+                  </Button>
+
+                  {aiTestResult && (
+                    <div className={`flex items-center gap-1.5 text-sm font-bold ${aiTestResult.ok ? "text-green-600" : "text-red-600"}`}>
+                      {aiTestResult.ok ? (
+                        <><CheckCircle2 className="w-4 h-4" /> Reachable · {aiTestResult.latencyMs}ms</>
+                      ) : (
+                        <><XCircle className="w-4 h-4" /> {aiTestResult.error ?? "Failed"}</>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {!aiStatus.configured && (
+                  <p className="text-xs text-amber-600 font-medium bg-amber-50 rounded-lg p-3">
+                    Set <code className="font-mono bg-amber-100 px-1 rounded">OPENAI_API_KEY</code>,{" "}
+                    <code className="font-mono bg-amber-100 px-1 rounded">AI_INTEGRATIONS_OPENAI_BASE_URL</code>, and{" "}
+                    <code className="font-mono bg-amber-100 px-1 rounded">AI_MODEL</code> in your{" "}
+                    <code className="font-mono bg-amber-100 px-1 rounded">.env</code> to enable Google Sheet sync.
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="h-16 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
             )}
           </CardContent>
         </Card>

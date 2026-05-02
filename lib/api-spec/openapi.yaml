@@ -35,6 +35,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /ai-status:
+    get:
+      operationId: getAiStatus
+      tags: [health]
+      summary: Returns current AI provider configuration (no network call)
+      responses:
+        "200":
+          description: AI provider status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiStatus"
+
+  /ai-status/test:
+    post:
+      operationId: testAiConnection
+      tags: [health]
+      summary: Makes a minimal live call to verify AI connectivity
+      responses:
+        "200":
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiTestResult"
+
   /games:
     get:
       operationId: listGames
@@ -453,6 +479,38 @@ components:
           type: string
       required:
         - status
+
+    AiStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        provider:
+          type: string
+          enum: [openai, gemini, groq, custom, unconfigured]
+        model:
+          type: string
+        baseUrlHost:
+          type: string
+          nullable: true
+      required:
+        - configured
+        - provider
+        - model
+
+    AiTestResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        latencyMs:
+          type: integer
+        error:
+          type: string
+          nullable: true
+      required:
+        - ok
+        - latencyMs
 
     Game:
       type: object

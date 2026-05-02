@@ -15,6 +15,25 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Returns current AI provider configuration (no network call)
+ */
+export const GetAiStatusResponse = zod.object({
+  configured: zod.boolean(),
+  provider: zod.enum(["openai", "gemini", "groq", "custom", "unconfigured"]),
+  model: zod.string(),
+  baseUrlHost: zod.string().nullish(),
+});
+
+/**
+ * @summary Makes a minimal live call to verify AI connectivity
+ */
+export const TestAiConnectionResponse = zod.object({
+  ok: zod.boolean(),
+  latencyMs: zod.number(),
+  error: zod.string().nullish(),
+});
+
+/**
  * @summary List all games
  */
 export const ListGamesResponseItem = zod.object({

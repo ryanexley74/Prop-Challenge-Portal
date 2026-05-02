@@ -8,10 +8,12 @@ import answersRouter from "./answers";
 import leaderboardRouter from "./leaderboard";
 import recapRouter from "./recap";
 import sheetSyncRouter from "./sheet-sync";
+import aiStatusRouter from "./ai-status";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(aiStatusRouter);
 router.use(gamesRouter);
 router.use(propsRouter);
 router.use(importPropsRouter);
