@@ -3,12 +3,16 @@ import { useGetGame, useGetLeaderboard, getGetGameQueryKey, getGetLeaderboardQue
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Trophy, Activity, Users, ListChecks } from "lucide-react";
+import { Trophy, Activity, Users, ListChecks, Link2, Check } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function GameHub() {
   const { gameId } = useParams();
   const id = Number(gameId);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   const { data: game, isLoading: gameLoading } = useGetGame(id, {
     query: { enabled: !!id, queryKey: getGetGameQueryKey(id) }
@@ -17,6 +21,15 @@ export default function GameHub() {
   const { data: leaderboard, isLoading: lbLoading } = useGetLeaderboard(id, {
     query: { enabled: !!id, queryKey: getGetLeaderboardQueryKey(id), refetchInterval: 3000 }
   });
+
+  const handleCopyInvite = () => {
+    const link = `${window.location.origin}/games/${id}/join`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      toast({ title: "Invite link copied!", description: "Share this link with your friends." });
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   if (gameLoading || lbLoading) {
     return (
@@ -47,7 +60,7 @@ export default function GameHub() {
             {game.description && <p className="opacity-90">{game.description}</p>}
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="text-center px-4 py-2 bg-primary-foreground/10 rounded-lg">
               <div className="text-3xl font-black">{game.playerCount}</div>
               <div className="text-xs uppercase font-bold opacity-80">Players</div>
@@ -57,10 +70,17 @@ export default function GameHub() {
               <div className="text-xs uppercase font-bold opacity-80">Props</div>
             </div>
             {game.status === "open" && (
-              <Link href={`/games/${id}/join`} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold uppercase tracking-wider ml-4">
+              <Link href={`/games/${id}/join`} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold uppercase tracking-wider">
                 Join Game
               </Link>
             )}
+            <button
+              onClick={handleCopyInvite}
+              className="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-bold uppercase tracking-wider bg-white/15 hover:bg-white/25 text-white transition-colors"
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+              {copied ? "Copied!" : "Invite Link"}
+            </button>
           </div>
         </div>
       </header>

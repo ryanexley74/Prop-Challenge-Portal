@@ -13,8 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings, ShieldAlert, Plus, Trash2, ArrowRight } from "lucide-react";
+import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 type PropType = "yes_no" | "over_under";
 
@@ -22,6 +23,17 @@ export default function AdminPanel() {
   const { gameId } = useParams();
   const id = Number(gameId);
   const queryClient = useQueryClient();
+  const [copiedInvite, setCopiedInvite] = useState(false);
+  const { toast: showToast } = useToast();
+
+  const handleCopyInvite = () => {
+    const link = `${window.location.origin}/games/${id}/join`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedInvite(true);
+      showToast({ title: "Invite link copied!", description: link });
+      setTimeout(() => setCopiedInvite(false), 2000);
+    });
+  };
 
   const { data: game, isLoading: gameLoading } = useGetGame(id, {
     query: { enabled: !!id, queryKey: getGetGameQueryKey(id) }
@@ -122,9 +134,18 @@ export default function AdminPanel() {
               <p className="text-sm font-bold opacity-70">Game: {game.name}</p>
             </div>
           </div>
-          <Link href={`/games/${id}`} className="inline-flex items-center gap-2 text-sm font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors">
-            View Live Hub <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyInvite}
+              className="inline-flex items-center gap-2 text-sm font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors"
+            >
+              {copiedInvite ? <Check className="w-4 h-4 text-green-400" /> : <Link2 className="w-4 h-4" />}
+              {copiedInvite ? "Copied!" : "Invite Link"}
+            </button>
+            <Link href={`/games/${id}`} className="inline-flex items-center gap-2 text-sm font-bold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors">
+              View Live Hub <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </header>
 

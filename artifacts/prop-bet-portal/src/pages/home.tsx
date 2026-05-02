@@ -8,7 +8,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, Plus, Activity } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trophy, Plus, Activity, Link2, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+function CopyInviteButton({ gameId }: { gameId: number }) {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const link = `${window.location.origin}/games/${gameId}/join`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      toast({ title: "Invite link copied!", description: link });
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <Button variant="outline" size="sm" onClick={handleCopy} className="font-bold gap-2">
+      {copied ? <Check className="w-4 h-4 text-green-600" /> : <Link2 className="w-4 h-4" />}
+      {copied ? "Copied!" : "Copy Invite Link"}
+    </Button>
+  );
+}
 
 export default function Home() {
   const { data: games, isLoading } = useListGames();
@@ -101,10 +125,13 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="flex-1">
                 </CardContent>
-                <CardFooter className="bg-muted/50 p-4 border-t flex justify-between">
+                <CardFooter className="bg-muted/50 p-4 border-t flex flex-col gap-2">
                   <Link href={`/games/${game.id}`} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full">
                     View Game Hub
                   </Link>
+                  {game.status === "open" && (
+                    <CopyInviteButton gameId={game.id} />
+                  )}
                 </CardFooter>
               </Card>
             ))}
