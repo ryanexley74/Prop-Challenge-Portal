@@ -266,6 +266,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/Player"
 
+  /players/{playerId}/answers:
+    get:
+      operationId: getPlayerAnswers
+      tags: [answers]
+      summary: Get all answers submitted by a specific player
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Player's answers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Answer"
+        "404":
+          description: Player not found
+
   /games/{gameId}/answers:
     get:
       operationId: listAnswers

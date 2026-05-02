@@ -1039,6 +1039,94 @@ export const useJoinGame = <
 };
 
 /**
+ * @summary Get all answers submitted by a specific player
+ */
+export const getGetPlayerAnswersUrl = (playerId: number) => {
+  return `/api/players/${playerId}/answers`;
+};
+
+export const getPlayerAnswers = async (
+  playerId: number,
+  options?: RequestInit,
+): Promise<Answer[]> => {
+  return customFetch<Answer[]>(getGetPlayerAnswersUrl(playerId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPlayerAnswersQueryKey = (playerId: number) => {
+  return [`/api/players/${playerId}/answers`] as const;
+};
+
+export const getGetPlayerAnswersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPlayerAnswers>>,
+  TError = ErrorType<void>,
+>(
+  playerId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPlayerAnswers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPlayerAnswersQueryKey(playerId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPlayerAnswers>>
+  > = ({ signal }) => getPlayerAnswers(playerId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!playerId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPlayerAnswers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPlayerAnswersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPlayerAnswers>>
+>;
+export type GetPlayerAnswersQueryError = ErrorType<void>;
+
+/**
+ * @summary Get all answers submitted by a specific player
+ */
+
+export function useGetPlayerAnswers<
+  TData = Awaited<ReturnType<typeof getPlayerAnswers>>,
+  TError = ErrorType<void>,
+>(
+  playerId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPlayerAnswers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPlayerAnswersQueryOptions(playerId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get all answers for a game (for admin)
  */
 export const getListAnswersUrl = (gameId: number) => {

@@ -7,8 +7,32 @@ import {
   SubmitAnswersParams,
   ListAnswersParams,
 } from "@workspace/api-zod";
+import { z } from "zod";
 
 const router: IRouter = Router();
+
+// Get all answers for a specific player
+router.get("/players/:playerId/answers", async (req, res) => {
+  try {
+    const playerId = z.coerce.number().int().parse(req.params.playerId);
+
+    const player = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
+    if (player.length === 0) {
+      return res.status(404).json({ error: "Player not found" });
+    }
+
+    const answers = await db.select().from(answersTable)
+      .where(eq(answersTable.playerId, playerId));
+
+    res.json(answers.map(a => ({
+      ...a,
+      createdAt: a.createdAt.toISOString(),
+    })));
+  } catch (err) {
+    req.log.error({ err }, "Failed to get player answers");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // List all answers for a game
 router.get("/games/:gameId/answers", async (req, res) => {

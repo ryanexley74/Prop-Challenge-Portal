@@ -203,6 +203,22 @@ export const JoinGameBody = zod.object({
 });
 
 /**
+ * @summary Get all answers submitted by a specific player
+ */
+export const GetPlayerAnswersParams = zod.object({
+  playerId: zod.coerce.number(),
+});
+
+export const GetPlayerAnswersResponseItem = zod.object({
+  id: zod.number(),
+  propId: zod.number(),
+  playerId: zod.number(),
+  answer: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const GetPlayerAnswersResponse = zod.array(GetPlayerAnswersResponseItem);
+
+/**
  * @summary Get all answers for a game (for admin)
  */
 export const ListAnswersParams = zod.object({

@@ -3,8 +3,8 @@ import { useGetGame, useGetLeaderboard, getGetGameQueryKey, getGetLeaderboardQue
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Trophy, Activity, Users, ListChecks, Link2, Check, Tv2 } from "lucide-react";
-import { useState } from "react";
+import { Trophy, Activity, Users, ListChecks, Link2, Check, Tv2, ClipboardList } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
@@ -13,7 +13,13 @@ export default function GameHub() {
   const { gameId } = useParams();
   const id = Number(gameId);
   const [copied, setCopied] = useState(false);
+  const [myPlayerId, setMyPlayerId] = useState<number | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const stored = localStorage.getItem(`prop_game_${id}_player`);
+    if (stored) setMyPlayerId(Number(stored));
+  }, [id]);
 
   const { data: game, isLoading: gameLoading } = useGetGame(id, {
     query: { enabled: !!id, queryKey: getGetGameQueryKey(id) }
@@ -83,6 +89,15 @@ export default function GameHub() {
               {copied ? "Copied!" : "Invite Link"}
             </button>
             {game && <InviteQrDialog gameId={id} gameName={game.name} variant="glass" />}
+            {myPlayerId && (
+              <Link
+                href={`/games/${id}/results`}
+                className="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-bold uppercase tracking-wider bg-white/15 hover:bg-white/25 text-white transition-colors"
+              >
+                <ClipboardList className="w-4 h-4" />
+                My Results
+              </Link>
+            )}
             <Link
               href={`/games/${id}/tv`}
               className="inline-flex items-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-bold uppercase tracking-wider bg-white/15 hover:bg-white/25 text-white transition-colors"
