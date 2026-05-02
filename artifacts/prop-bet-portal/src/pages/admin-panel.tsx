@@ -17,6 +17,7 @@ import { Settings, ShieldAlert, Plus, Trash2, ArrowRight, Link2, Check } from "l
 import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 import { InviteQrDialog } from "@/components/invite-qr-dialog";
+import { ImportPropsDialog } from "@/components/import-props-dialog";
 
 type PropType = "yes_no" | "over_under";
 
@@ -202,7 +203,9 @@ export default function AdminPanel() {
           <h2 className="text-2xl font-black uppercase flex items-center gap-2">
             <Settings className="w-6 h-6 text-primary" /> Manage Props
           </h2>
-          <Dialog open={propOpen} onOpenChange={setPropOpen}>
+          <div className="flex items-center gap-2">
+            <ImportPropsDialog gameId={id} existingCount={props?.length ?? 0} />
+            <Dialog open={propOpen} onOpenChange={setPropOpen}>
             <DialogTrigger asChild>
               <Button className="font-bold uppercase tracking-wider">
                 <Plus className="w-4 h-4 mr-2" /> Add Prop
@@ -254,6 +257,7 @@ export default function AdminPanel() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <div className="space-y-4">

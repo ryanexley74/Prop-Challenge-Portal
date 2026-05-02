@@ -193,6 +193,35 @@ paths:
         "204":
           description: Deleted
 
+  /games/{gameId}/import-props:
+    post:
+      operationId: importProps
+      tags: [props]
+      summary: Scrape a URL and extract prop bets using AI
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportPropsBody"
+      responses:
+        "200":
+          description: Parsed props extracted from the URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportPropsResult"
+        "400":
+          description: Bad request
+        "500":
+          description: Failed to fetch or parse
+
   /games/{gameId}/players:
     get:
       operationId: listPlayers
@@ -463,6 +492,42 @@ components:
       required:
         - question
         - type
+
+    ImportPropsBody:
+      type: object
+      properties:
+        url:
+          type: string
+        text:
+          type: string
+      minProperties: 1
+
+    ParsedProp:
+      type: object
+      properties:
+        question:
+          type: string
+        type:
+          type: string
+          enum: [yes_no, over_under]
+        threshold:
+          type: number
+          nullable: true
+      required:
+        - question
+        - type
+
+    ImportPropsResult:
+      type: object
+      properties:
+        props:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParsedProp"
+        sourceTitle:
+          type: string
+      required:
+        - props
 
     UpdatePropBody:
       type: object

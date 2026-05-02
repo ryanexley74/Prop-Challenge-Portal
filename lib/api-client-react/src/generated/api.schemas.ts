@@ -100,6 +100,30 @@ export interface CreatePropBody {
   order?: number;
 }
 
+export interface ImportPropsBody {
+  url?: string;
+  text?: string;
+}
+
+export type ParsedPropType =
+  (typeof ParsedPropType)[keyof typeof ParsedPropType];
+
+export const ParsedPropType = {
+  yes_no: "yes_no",
+  over_under: "over_under",
+} as const;
+
+export interface ParsedProp {
+  question: string;
+  type: ParsedPropType;
+  threshold?: number | null;
+}
+
+export interface ImportPropsResult {
+  props: ParsedProp[];
+  sourceTitle?: string;
+}
+
 export interface UpdatePropBody {
   result?: boolean | null;
   question?: string;

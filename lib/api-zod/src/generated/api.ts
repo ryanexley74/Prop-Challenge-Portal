@@ -154,6 +154,29 @@ export const DeletePropParams = zod.object({
 });
 
 /**
+ * @summary Scrape a URL and extract prop bets using AI
+ */
+export const ImportPropsParams = zod.object({
+  gameId: zod.coerce.number(),
+});
+
+export const ImportPropsBody = zod.object({
+  url: zod.string().optional(),
+  text: zod.string().optional(),
+});
+
+export const ImportPropsResponse = zod.object({
+  props: zod.array(
+    zod.object({
+      question: zod.string(),
+      type: zod.enum(["yes_no", "over_under"]),
+      threshold: zod.number().nullish(),
+    }),
+  ),
+  sourceTitle: zod.string().optional(),
+});
+
+/**
  * @summary List players in a game
  */
 export const ListPlayersParams = zod.object({

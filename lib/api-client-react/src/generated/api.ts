@@ -24,6 +24,8 @@ import type {
   GameDetail,
   GameSummary,
   HealthStatus,
+  ImportPropsBody,
+  ImportPropsResult,
   JoinGameBody,
   Leaderboard,
   Player,
@@ -773,6 +775,93 @@ export const useDeleteProp = <
   TContext
 > => {
   return useMutation(getDeletePropMutationOptions(options));
+};
+
+/**
+ * @summary Scrape a URL and extract prop bets using AI
+ */
+export const getImportPropsUrl = (gameId: number) => {
+  return `/api/games/${gameId}/import-props`;
+};
+
+export const importProps = async (
+  gameId: number,
+  importPropsBody: ImportPropsBody,
+  options?: RequestInit,
+): Promise<ImportPropsResult> => {
+  return customFetch<ImportPropsResult>(getImportPropsUrl(gameId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(importPropsBody),
+  });
+};
+
+export const getImportPropsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importProps>>,
+    TError,
+    { gameId: number; data: BodyType<ImportPropsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importProps>>,
+  TError,
+  { gameId: number; data: BodyType<ImportPropsBody> },
+  TContext
+> => {
+  const mutationKey = ["importProps"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importProps>>,
+    { gameId: number; data: BodyType<ImportPropsBody> }
+  > = (props) => {
+    const { gameId, data } = props ?? {};
+
+    return importProps(gameId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportPropsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importProps>>
+>;
+export type ImportPropsMutationBody = BodyType<ImportPropsBody>;
+export type ImportPropsMutationError = ErrorType<void>;
+
+/**
+ * @summary Scrape a URL and extract prop bets using AI
+ */
+export const useImportProps = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importProps>>,
+    TError,
+    { gameId: number; data: BodyType<ImportPropsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importProps>>,
+  TError,
+  { gameId: number; data: BodyType<ImportPropsBody> },
+  TContext
+> => {
+  return useMutation(getImportPropsMutationOptions(options));
 };
 
 /**
