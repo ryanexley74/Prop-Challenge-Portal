@@ -8,9 +8,11 @@ import {
   getGetLeaderboardQueryKey,
   getGetPlayerAnswersQueryKey,
 } from "@workspace/api-client-react";
-import { Trophy, CheckCircle2, XCircle, Clock, ArrowLeft, Medal, Bell, BellOff, History } from "lucide-react";
+import { Trophy, CheckCircle2, XCircle, Clock, ArrowLeft, Medal, Bell, BellOff, History, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNotificationPermission, usePropNotifications } from "@/hooks/use-prop-notifications";
+
+type PropFilter = "all" | "correct" | "wrong" | "pending";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -28,6 +30,7 @@ export default function PlayerResults() {
   const { gameId } = useParams();
   const id = Number(gameId);
   const [playerId, setPlayerId] = useState<number | null>(null);
+  const [filterTab, setFilterTab] = useState<PropFilter>("all");
 
   useEffect(() => {
     const stored = localStorage.getItem(`prop_game_${id}_player`);
@@ -121,6 +124,24 @@ export default function PlayerResults() {
       .filter((p) => answerMap.get(p.id) === p.result)
       .map((p) => p.id)
   );
+
+  const wrongProps = resolvedProps.filter((p) => !correctPropIds.has(p.id));
+  const correctProps = resolvedProps.filter((p) => correctPropIds.has(p.id));
+
+  const visibleResolved =
+    filterTab === "correct" ? correctProps
+    : filterTab === "wrong" ? wrongProps
+    : filterTab === "pending" ? []
+    : resolvedProps;
+
+  const visiblePending = filterTab === "all" || filterTab === "pending" ? pendingProps : [];
+
+  const FILTER_TABS: { key: PropFilter; label: string; count: number }[] = [
+    { key: "all", label: "All", count: props.length },
+    { key: "correct", label: "✓ Correct", count: correctProps.length },
+    { key: "wrong", label: "✗ Wrong", count: wrongProps.length },
+    { key: "pending", label: "⏳ Pending", count: pendingProps.length },
+  ];
 
   const rankMedal = rank !== null && rank <= 3 ? MEDALS[rank - 1] : null;
 
@@ -252,13 +273,49 @@ export default function PlayerResults() {
       </header>
 
       <div className="container mx-auto px-4 max-w-2xl space-y-3">
+
+        {/* Filter tabs — only shown when there are enough props */}
+        {props.length > 8 && (
+          <div
+            className="flex items-center gap-1.5 p-1 rounded-xl overflow-x-auto"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <Filter className="w-3.5 h-3.5 text-slate-600 shrink-0 ml-1.5" />
+            {FILTER_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilterTab(tab.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap"
+                style={
+                  filterTab === tab.key
+                    ? { background: "rgba(249,115,22,0.2)", color: "#f97316", border: "1px solid rgba(249,115,22,0.35)" }
+                    : { color: "#64748b", border: "1px solid transparent" }
+                }
+              >
+                {tab.label}
+                <span
+                  className="px-1.5 py-0.5 rounded-md text-xs font-black"
+                  style={{
+                    background: filterTab === tab.key ? "rgba(249,115,22,0.25)" : "rgba(255,255,255,0.07)",
+                    color: filterTab === tab.key ? "#fb923c" : "#475569",
+                  }}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Resolved props */}
-        {resolvedProps.length > 0 && (
+        {visibleResolved.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground px-1">
-              Resolved Props
-            </h2>
-            {resolvedProps.map((prop, idx) => {
+            {props.length > 8 && filterTab === "all" && (
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground px-1">
+                Resolved Props
+              </h2>
+            )}
+            {visibleResolved.map((prop, idx) => {
               const myAnswer = answerMap.get(prop.id);
               const isCorrect = myAnswer === prop.result;
               const didAnswer = myAnswer !== undefined;
@@ -360,12 +417,14 @@ export default function PlayerResults() {
         )}
 
         {/* Pending props */}
-        {pendingProps.length > 0 && (
+        {visiblePending.length > 0 && (
           <div className="space-y-3 mt-4">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground px-1">
-              Pending Props
-            </h2>
-            {pendingProps.map((prop, idx) => {
+            {(props.length <= 8 || filterTab === "all") && (
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground px-1">
+                Pending Props
+              </h2>
+            )}
+            {visiblePending.map((prop, idx) => {
               const myAnswer = answerMap.get(prop.id);
               const didAnswer = myAnswer !== undefined;
 
@@ -379,7 +438,7 @@ export default function PlayerResults() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Prop {resolvedProps.length + idx + 1}
+                      Prop {resolvedProps.length + idx + 1} · Pending
                     </div>
                     <div className="font-bold text-base leading-snug mb-3">{prop.question}</div>
                     {prop.threshold && (

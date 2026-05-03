@@ -68,6 +68,8 @@ export default function GameRecap() {
   const { gameId } = useParams();
   const id = Number(gameId);
   const [copied, setCopied] = useState(false);
+  const [propFilter, setPropFilter] = useState<"all" | "resolved" | "pending">("all");
+  const [pendingOpen, setPendingOpen] = useState(false);
 
   const { data: recap, isLoading } = useGetGameRecap(id, {
     query: { enabled: !!id, queryKey: getGetGameRecapQueryKey(id) },
@@ -116,6 +118,10 @@ export default function GameRecap() {
 
   const resolvedStats = recap.propStats.filter((p) => p.result !== null && p.result !== undefined);
   const pendingStats = recap.propStats.filter((p) => p.result === null || p.result === undefined);
+
+  const visibleResolvedStats = propFilter === "pending" ? [] : resolvedStats;
+  const visiblePendingStats = propFilter === "resolved" ? [] : pendingStats;
+  const showFilterBar = recap.propStats.length > 8;
 
   return (
     <div className="min-h-screen pb-16" style={{ background: "#0a1628" }}>
@@ -270,12 +276,54 @@ export default function GameRecap() {
         {/* Prop breakdown */}
         {recap.propStats.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-orange-400 text-xs font-black uppercase tracking-[0.35em] px-1">
-              Prop-by-Prop Breakdown
-            </h2>
+            <div className="flex items-center justify-between gap-3 flex-wrap px-1">
+              <h2 className="text-orange-400 text-xs font-black uppercase tracking-[0.35em]">
+                Prop-by-Prop Breakdown
+              </h2>
+              <span className="text-slate-600 text-xs font-bold">
+                {recap.resolvedProps}/{recap.totalProps} resolved
+              </span>
+            </div>
+
+            {/* Filter tabs — only shown when there are enough props */}
+            {showFilterBar && (
+              <div
+                className="flex items-center gap-1 p-1 rounded-xl overflow-x-auto"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                {(["all", "resolved", "pending"] as const).map((tab) => {
+                  const count = tab === "all" ? recap.propStats.length : tab === "resolved" ? resolvedStats.length : pendingStats.length;
+                  const label = tab === "all" ? "All" : tab === "resolved" ? "✅ Resolved" : "⏳ Pending";
+                  const active = propFilter === tab;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setPropFilter(tab)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap"
+                      style={
+                        active
+                          ? { background: "rgba(249,115,22,0.2)", color: "#f97316", border: "1px solid rgba(249,115,22,0.35)" }
+                          : { color: "#64748b", border: "1px solid transparent" }
+                      }
+                    >
+                      {label}
+                      <span
+                        className="px-1.5 py-0.5 rounded-md text-xs font-black"
+                        style={{
+                          background: active ? "rgba(249,115,22,0.25)" : "rgba(255,255,255,0.07)",
+                          color: active ? "#fb923c" : "#475569",
+                        }}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Resolved props */}
-            {resolvedStats.length > 0 && resolvedStats.map((stat, idx) => {
+            {visibleResolvedStats.length > 0 && visibleResolvedStats.map((stat, idx) => {
               const isToughest = stat.propId === toughestId;
               const isEasiest = stat.propId === easiestId;
 
@@ -349,13 +397,31 @@ export default function GameRecap() {
               );
             })}
 
-            {/* Pending props */}
-            {pendingStats.length > 0 && (
+            {/* Pending props — collapsible when there are also resolved ones */}
+            {visiblePendingStats.length > 0 && (
               <>
-                <h3 className="text-slate-600 text-xs font-black uppercase tracking-[0.3em] px-1 pt-2">
-                  Unresolved Props
-                </h3>
-                {pendingStats.map((stat, idx) => (
+                <button
+                  onClick={() => setPendingOpen((o) => !o)}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-colors hover:bg-white/5"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+                >
+                  <span className="text-slate-500 text-xs font-black uppercase tracking-[0.3em]">
+                    ⏳ Unresolved Props
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="px-2 py-0.5 rounded-md text-xs font-black"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "#64748b" }}
+                    >
+                      {visiblePendingStats.length}
+                    </span>
+                    <span className="text-slate-600 text-xs font-bold">
+                      {pendingOpen ? "▲ Hide" : "▼ Show"}
+                    </span>
+                  </div>
+                </button>
+
+                {pendingOpen && visiblePendingStats.map((stat, idx) => (
                   <div
                     key={stat.propId}
                     className="rounded-2xl p-5 opacity-50"
